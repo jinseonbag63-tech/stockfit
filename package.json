@@ -1,0 +1,12 @@
+{
+  "name": "stockfit",
+  "version": "0.1.0",
+  "description": "투자성향과 종목의 적합도를 공식 재무데이터로 분석하는 초보자용 웹 서비스",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
