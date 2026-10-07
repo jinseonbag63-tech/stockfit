@@ -8,75 +8,136 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <a href="/" class="brand">StockFit</a>
-    <button type="button" id="profileBtn" class="profile-chip">내 투자성향 설정</button>
+  <header class="nav">
+    <div class="nav-inner">
+      <a href="/" class="logo"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i></span>StockFit</a>
+      <nav class="menu" aria-label="주요 메뉴">
+        <a href="#analysis" class="active">종목 분석</a>
+        <a href="#watch">관심종목</a>
+        <button type="button" id="navProfile">내 투자성향</button>
+      </nav>
+      <span id="profileBadge" class="badge">성향 미설정</span>
+    </div>
   </header>
 
-  <main id="main">
+  <main>
     <section class="hero">
+      <p class="eyebrow">복잡한 주식, 쉬운 시작</p>
       <h1>이 회사, 나와 잘 맞을까요?</h1>
-      <p class="lede">종목을 검색하면 공시된 재무 정보를 내 투자 기준으로 풀어서 보여드려요.</p>
+      <p class="hero-sub">종목만 검색하세요. 어려운 정보는 쉽게 풀어드릴게요.</p>
       <form id="searchForm" class="search" autocomplete="off">
         <label for="q" class="sr-only">종목명 또는 종목코드</label>
-        <input id="q" name="q" list="stockList" placeholder="종목명 또는 종목코드 (예: 삼성전자)" required />
+        <input id="q" name="q" list="stockList" placeholder="궁금한 종목명 또는 종목코드" required />
         <datalist id="stockList"></datalist>
-        <button type="submit">분석하기</button>
+        <button type="submit">쉽게 분석하기</button>
       </form>
-      <div id="quickPicks" class="quick-picks" aria-label="바로 분석할 수 있는 종목"></div>
+      <p class="examples"><span>예시 종목</span><span id="quickPicks"></span></p>
     </section>
 
-    <p id="notice" class="notice" hidden></p>
-    <p id="error" class="error" role="alert" hidden></p>
-
-    <section id="result" class="result" hidden aria-live="polite">
-      <div class="result-head">
+    <section id="analysis" class="wrap">
+      <div class="section-head">
         <div>
-          <h2 id="stockName"></h2>
-          <p id="stockMeta" class="meta"></p>
+          <p class="section-eyebrow">한눈에 보는 종목</p>
+          <h2>알고 싶은 것부터, 간단하게.</h2>
         </div>
-        <button type="button" id="watchBtn" class="watch-btn" aria-pressed="false">관심종목에 추가</button>
+        <p id="sourceTop" class="section-note">종목을 검색하면 공시 데이터로 분석해요</p>
       </div>
-      <p id="summary" class="summary"></p>
 
-      <div class="fit">
-        <div class="fit-score">
-          <p class="fit-label">내 기준 적합도</p>
-          <p class="fit-number"><span id="fitTotal">0</span><small>/100</small></p>
+      <p id="notice" class="notice" hidden></p>
+      <p id="error" class="error" role="alert" hidden></p>
+
+      <div id="empty" class="empty">위에서 종목을 검색하거나 예시 종목을 눌러보세요.</div>
+
+      <div id="result" class="grid" hidden>
+        <article class="card company">
+          <div class="company-head">
+            <div class="company-id">
+              <span id="stockInitial" class="initial"></span>
+              <div>
+                <h3><span id="stockName"></span> <span id="stockMarket" class="market"></span></h3>
+                <p id="stockMeta" class="meta"></p>
+              </div>
+            </div>
+            <button type="button" id="watchBtn" class="watch-btn" aria-pressed="false">☆ 관심종목</button>
+          </div>
+
+          <div class="oneline">
+            <p class="oneline-label">한 줄로 이해하기</p>
+            <p id="summary" class="oneline-text"></p>
+          </div>
+
+          <div class="status-head">
+            <h4>기업 상태 한눈에</h4>
+            <span>항목을 누르면 이유를 볼 수 있어요</span>
+          </div>
+          <div id="statusGrid" class="status-grid"></div>
+          <div id="statusDetail" class="status-detail" hidden></div>
+
+          <details class="expert">
+            <summary>숫자로 자세히 보기</summary>
+            <ul id="indicators" class="indicators"></ul>
+            <p id="source" class="source"></p>
+          </details>
+        </article>
+
+        <aside class="card fitpanel" aria-label="내 기준 적합도">
+          <p class="fit-eyebrow">MY STOCK FIT</p>
+          <h3>내 기준으로 보면</h3>
+          <p id="fitProfile" class="fit-sub"></p>
+          <p class="fit-score"><span id="fitTotal">0</span><small>/ 100</small></p>
+          <p class="fit-caption">적합도</p>
+          <div class="fit-track"><span id="fitFill"></span></div>
           <p id="fitVerdict" class="fit-verdict"></p>
-          <p id="fitProfile" class="fit-profile"></p>
-        </div>
-        <div class="fit-why">
-          <p class="fit-label">점수가 이렇게 나온 이유</p>
-          <div id="fitBar" class="fit-bar" role="img"></div>
+
+          <p class="fit-why-title">점수가 이렇게 나온 이유</p>
           <ul id="fitParts" class="fit-parts"></ul>
+          <button type="button" id="resurvey" class="fit-btn">내 성향에 맞춰 다시 보기</button>
+        </aside>
+
+        <article class="card news">
+          <div class="mini-head"><h4>관련 최신 뉴스</h4><span>발행일 · 출처</span></div>
+          <p class="soon-text">기업 실적과 산업 동향 관련 기사를 모아 보여드릴 예정이에요.</p>
+          <p class="soon-sub">기사 제목을 누르면 원문으로 이동해요 · 다음 업데이트에서 연결</p>
+        </article>
+
+        <article class="card planner">
+          <h4>나만의 투자 플래너</h4>
+          <p class="soon-text">투자금 · 기간 · 내 투자성향을 바탕으로 계획을 세워볼 수 있어요.</p>
+          <button type="button" class="planner-btn" disabled>준비 중이에요</button>
+        </article>
+      </div>
+    </section>
+
+    <section id="watch" class="wrap watch">
+      <div class="section-head">
+        <div>
+          <p class="section-eyebrow">관심종목</p>
+          <h2>내 성향과 얼마나 맞을까요?</h2>
         </div>
       </div>
-
-      <h3 class="section-title">지표를 쉬운 말로</h3>
-      <ul id="indicators" class="indicators"></ul>
-      <p id="source" class="source"></p>
+      <div class="card">
+        <p id="watchSummary" class="watch-summary"></p>
+        <ul id="watchList" class="watch-list"></ul>
+      </div>
     </section>
 
-    <section class="watch" aria-labelledby="watchTitle">
-      <h3 id="watchTitle" class="section-title">내 관심종목</h3>
-      <div id="watchSummary" class="watch-summary"></div>
-      <ul id="watchList" class="watch-list"></ul>
+    <section class="wrap">
+      <details class="how card">
+        <summary>적합도는 어떻게 계산하나요?</summary>
+        <p>DART에 공시된 사업보고서에서 지표를 계산하고, 기준마다 0~100점을 매겨요. 설문 답변에 따라 기준별 비중이 달라지고, 비중을 곱해 더한 값이 적합도예요. 같은 입력이면 언제나 같은 점수가 나와요.</p>
+        <ul id="criteriaList"></ul>
+        <p class="fine">투자 권유가 아닌 정보 제공 목적의 분석이에요. 투자성향은 간이 설문으로 정한 것이고 공식 투자성향 진단이 아니에요.</p>
+      </details>
     </section>
-
-    <details class="how">
-      <summary>적합도는 어떻게 계산하나요?</summary>
-      <p>DART에 공시된 사업보고서에서 지표를 계산하고, 네 가지 기준마다 0~100점을 매겨요. 설문 답변에 따라 기준별 비중이 달라지고, 비중을 곱해 더한 값이 적합도예요. 같은 입력이면 언제나 같은 점수가 나와요.</p>
-      <ul id="criteriaList"></ul>
-      <p class="fine">투자 권유가 아닌 정보 제공 목적의 분석이에요. 투자성향은 간이 설문으로 정한 것이고 공식 투자성향 진단이 아니에요.</p>
-    </details>
   </main>
+
+  <footer class="footer">StockFit · 초보 투자자를 위한 개인화 종목 분석 서비스</footer>
 
   <dialog id="survey" class="survey">
     <form method="dialog" id="surveyForm">
+      <p class="eyebrow">내 투자성향</p>
       <h2>어떤 투자가 더 편한가요?</h2>
-      <p class="lede">세 가지 질문으로 분석 기준을 정해요. 언제든 다시 바꿀 수 있어요.</p>
-
+      <p class="hero-sub">세 가지 질문으로 분석 기준을 정해요. 언제든 다시 바꿀 수 있어요.</p>
       <fieldset>
         <legend>어떤 기업이 더 마음에 드나요?</legend>
         <label><input type="radio" name="q1" value="steady" required /> 꾸준히 이익을 내고 재무가 안정적인 기업</label>
@@ -93,9 +154,7 @@
         <label><input type="radio" name="q3" value="calm" required /> 변동이 적은 종목이 더 편해요</label>
         <label><input type="radio" name="q3" value="growth" /> 성장 가능성이 있다면 괜찮아요</label>
       </fieldset>
-      <div class="survey-actions">
-        <button type="submit" class="primary">이 기준으로 분석하기</button>
-      </div>
+      <div class="survey-actions"><button type="submit" class="primary">이 기준으로 분석하기</button></div>
     </form>
   </dialog>
 

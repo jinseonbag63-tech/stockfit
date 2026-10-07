@@ -65,7 +65,7 @@ export function explainMetrics(metrics, profile, fit) {
         ? `내가 가장 중요하게 보는 ${part.label} 기준에서 좋은 점수를 받았어요.`
         : `내가 가장 중요하게 보는 ${part.label} 기준에서 점수가 낮아요. 꼭 확인해보세요.`;
     }
-    return { key: m.key, label: m.label, value: fmt(v), meaning: m.meaning,
+    return { key: m.key, criterion: m.criterion, label: m.label, value: fmt(v), meaning: m.meaning,
              reading: v == null ? '이 지표는 데이터가 없어서 계산에서 뺐어요.' : m.read(v), forMe };
   });
 }
