@@ -80,6 +80,7 @@ export async function loadCompanies(key, dataDir) {
 }
 
 export const hasFullList = () => isFull;
+export const allCompanies = () => companies;
 export const getByCode = code => companies.find(c => c.code === code);
 
 // 영문 약자를 한글 발음으로 바꿔서 비교 (SK텔레콤 = 에스케이텔레콤, KT = 케이티)
