@@ -144,11 +144,15 @@ async function openPostgres(url) {
   catch { throw new Error('Postgres 라이브러리가 없어요. 이 폴더에서 npm install 을 먼저 실행해주세요.'); }
   pg.types.setTypeParser(20, v => Number(v)); // BIGINT(밀리초 시각, COUNT)를 숫자로
 
-  const host = new URL(url).hostname;
-  const local = ['localhost', '127.0.0.1', '::1'].includes(host);
-  // 클라우드 DB는 암호화 연결 필수. 인증서 확인이 안 되는 곳이면 DATABASE_SSL=no-verify
-  const ssl = local ? false : process.env.DATABASE_SSL === 'no-verify' ? { rejectUnauthorized: false } : true;
-  const pool = new pg.Pool({ connectionString: url, ssl, max: Number(process.env.DATABASE_POOL_MAX) || 5 });
+  // 주소의 sslmode는 여기서 직접 처리 (pg가 주소의 sslmode=require를 보면 "앞으로 의미가 바뀐다"는 경고를 남겨서)
+  const parsed = new URL(url);
+  const sslmode = parsed.searchParams.get('sslmode');
+  parsed.searchParams.delete('sslmode');
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname);
+  // 클라우드 DB는 인증서까지 확인하는 암호화 연결. 확인이 안 되는 곳이면 DATABASE_SSL=no-verify
+  const ssl = local || sslmode === 'disable' ? false
+    : process.env.DATABASE_SSL === 'no-verify' ? { rejectUnauthorized: false } : true;
+  const pool = new pg.Pool({ connectionString: parsed.toString(), ssl, max: Number(process.env.DATABASE_POOL_MAX) || 5 });
   pool.on('error', err => console.error('[DB]', err.message));
 
   // ? → $1, $2 ...
