@@ -84,9 +84,13 @@ export async function askAssistant({ apiKey, model, who, messages, context }) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = data.error?.message ?? `HTTP ${res.status}`;
-    console.error('[AI 도우미]', res.status, msg);
+    console.error('[AI 도우미]', res.status, data.error?.code ?? '', msg);
     if (res.status === 401) throw fail(502, 'AI 키가 올바르지 않아요. .env의 OPENAI_API_KEY를 확인해주세요.');
-    if (res.status === 429) throw fail(503, 'AI 사용 한도에 도달했어요. 잠시 후 다시 시도하거나 OpenAI 결제·한도를 확인해주세요.');
+    // 429는 두 가지: 계정에 크레딧이 없음(insufficient_quota) / 짧은 시간에 너무 많이 요청함
+    if (res.status === 429 && data.error?.code === 'insufficient_quota') {
+      throw fail(503, 'OpenAI 계정에 쓸 수 있는 크레딧이 없어요. platform.openai.com의 Billing에서 충전했는지 확인해주세요. 충전 전에 만든 키라면 새 키로 바꿔야 할 수 있어요.');
+    }
+    if (res.status === 429) throw fail(503, 'AI 요청이 잠시 몰렸어요. 조금 뒤에 다시 물어봐주세요.');
     if (res.status === 404) throw fail(502, `AI 모델(${model || DEFAULT_MODEL})을 찾을 수 없어요. .env의 OPENAI_MODEL을 확인해주세요.`);
     throw fail(502, 'AI 답변을 받지 못했어요. 잠시 후 다시 시도해주세요.');
   }
