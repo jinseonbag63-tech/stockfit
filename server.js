@@ -4,7 +4,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { QUICK_PICKS } from './src/stocks.js';
+import { QUICK_PICKS, MAJOR_STOCKS } from './src/stocks.js';
 import { loadCompanies, hasFullList, search, findStock, getByCode } from './src/corpCodes.js';
 import { getMetricsFromDart, getCompanyInfo } from './src/dart.js';
 import { getSample } from './src/sampleData.js';
@@ -15,6 +15,8 @@ import { getPriceStats, getMarketCaps } from './src/price.js';
 import { getRates } from './src/macro.js';
 import { initPeers, syncPeers, peerStatus, loadPeers, rankAmong, MIN_PEERS } from './src/peers.js';
 import { openDb } from './src/db.js';
+import { initCache, cached } from './src/cache.js';
+import { createPicks } from './src/picks.js';
 import { explainMetrics, summarize, beginnerSummary } from './src/explain.js';
 import { askAssistant, buildContext, DEFAULT_MODEL } from './src/chat.js';
 import { initAuth, signup, login, createSession, userFromToken, endSession, updateUserData, publicUser,
@@ -57,6 +59,7 @@ try {
 }
 await initAuth(db);
 initPeers(db);
+initCache(db);
 // 메일 설정이 있을 때만 이메일 인증·비밀번호 찾기를 켜요 (없으면 가입·로그인만)
 const MAIL_ON = mailConfigured();
 
@@ -75,11 +78,11 @@ async function optional(name, fn) {
 }
 const sourceState = (key, name) => (!key ? 'off' : sourceErrors[name] ? 'error' : 'on');
 
-// 재무 지표 + 시세 + 금리를 합쳐서 적합도 계산
-async function analyzeStock(stock, answers) {
+// 1) 성향과 상관없는 분석 재료: 재무 지표 + 시세 + 금리 + 업종 비교
+async function stockInputs(stock) {
   const data = await getData(stock);
   const [price, macro] = await Promise.all([
-    PRICE_KEY ? optional('price', () => getPriceStats(PRICE_KEY, stock.code)) : null,
+    PRICE_KEY ? optional('price', () => cached(`price:${stock.code}`, PRICE_TTL, () => getPriceStats(PRICE_KEY, stock.code))) : null,
     ECOS_KEY ? optional('macro', () => getRates(ECOS_KEY)) : null,
   ]);
   // 같은 업종 회사들 + 업종 PER·PBR 비교용 전체 시가총액 (업종 데이터가 있을 때만)
@@ -106,15 +109,41 @@ async function analyzeStock(stock, answers) {
   const rank = (key, value) => rankAmong(peers, {
     value, higherIsBetter: METRICS[key].higher, pick: PICK[key] ?? (p => p.m[key]),
   });
-
-  const profile = buildProfile(answers, macro);
-  const fit = computeFit(m, profile, { rank, risk: price?.risk ?? null });
-  return { data, metrics: m, price, macro, profile, fit };
+  return { data, metrics: m, price, macro, rank };
 }
 
-// DART 응답을 12시간 동안 저장해서 같은 종목을 반복 호출하지 않음
-const cache = new Map();
-const TTL = 12 * 60 * 60 * 1000;
+// 2) 성향으로 적합도 계산 (가벼워서 성향이 바뀌면 바로 다시 계산)
+function scoreStock(inputs, answers) {
+  const profile = buildProfile(answers, inputs.macro);
+  const fit = computeFit(inputs.metrics, profile, { rank: inputs.rank, risk: inputs.price?.risk ?? null });
+  return { profile, fit };
+}
+
+async function analyzeStock(stock, answers) {
+  const inputs = await stockInputs(stock);
+  return { ...inputs, ...scoreStock(inputs, answers) };
+}
+
+// "내 성향에 맞는 종목" 후보: 시세 키가 있으면 시가총액 상위 50개(우선주·ETF 제외),
+// 없으면 주요 대형주 목록, DART 키도 없으면 예시 종목
+const PICK_CANDIDATES = 50;
+async function listCandidates() {
+  await ready;
+  if (!DART_KEY) return { stocks: QUICK_PICKS.map(getByCode).filter(Boolean), basis: 'sample' };
+  if (PRICE_KEY) {
+    const caps = await optional('price', () => getMarketCaps(PRICE_KEY));
+    // 상장사 목록에 있는 종목코드만 (우선주·ETF·ETN은 DART 상장사 목록에 없어서 자연히 빠져요)
+    const stocks = [...(caps ?? [])].filter(([code, cap]) => cap > 0 && getByCode(code))
+      .sort((a, b) => b[1] - a[1]).slice(0, PICK_CANDIDATES).map(([code]) => getByCode(code));
+    if (stocks.length) return { stocks, basis: 'marketcap' };
+  }
+  return { stocks: MAJOR_STOCKS.map(getByCode).filter(Boolean), basis: 'list' };
+}
+const picks = createPicks({ listCandidates, stockInputs, scoreStock });
+
+// DART 데이터는 사업보고서(1년에 한 번) 기반이라 3일, 주가는 하루 한 번 업데이트라 6시간 저장 (메모리 + DB)
+const DART_TTL = 3 * 24 * 60 * 60 * 1000;
+const PRICE_TTL = 6 * 60 * 60 * 1000;
 
 async function getData(stock) {
   const fallback = reason => {
@@ -124,16 +153,14 @@ async function getData(stock) {
   };
   if (!DART_KEY) return fallback('DART 키가 없어서');
 
-  const hit = cache.get(stock.code);
-  if (hit && Date.now() - hit.at < TTL) return hit.data;
   try {
-    const [metrics, info] = await Promise.all([
-      getMetricsFromDart(DART_KEY, stock),
-      getCompanyInfo(DART_KEY, stock.corpCode).catch(() => ({})),
-    ]);
-    const data = { ...metrics, info };
-    cache.set(stock.code, { at: Date.now(), data });
-    return data;
+    return await cached(`dart:${stock.code}`, DART_TTL, async () => {
+      const [metrics, info] = await Promise.all([
+        getMetricsFromDart(DART_KEY, stock),
+        getCompanyInfo(DART_KEY, stock.corpCode).catch(() => ({})),
+      ]);
+      return { ...metrics, info };
+    });
   } catch (err) {
     console.error(`[DART] ${stock.name}:`, err.message);
     return fallback(`${stock.name}의 재무 데이터를 불러오지 못했어요. (${err.message})`);
@@ -281,6 +308,16 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { full: hasFullList(), picks });
     }
 
+    // 내 성향 기준 적합도가 높은 종목 (후보 안에서의 순서, 투자 추천 아님)
+    if (url.pathname === '/api/picks') {
+      const answers = Object.fromEntries(SURVEY.map(q => [q.key, url.searchParams.get(q.key) || undefined]));
+      const s = picks.status();
+      return json(res, 200, {
+        ready: s.ready, preparing: s.preparing, done: s.done, total: s.total, basis: s.basis, count: s.count,
+        picks: s.ready ? picks.top(answers, 5) : [],
+      }, { 'Cache-Control': 'no-store' });
+    }
+
     if (url.pathname === '/api/search') {
       await ready;
       return json(res, 200, search(url.searchParams.get('q'), 10).map(publicStock));
@@ -384,15 +421,20 @@ server.listen(PORT, async () => {
   console.log(OPENAI_KEY
     ? `AI 도우미 켜짐: ${OPENAI_MODEL} 모델, 로그인한 회원만 사용해요.`
     : 'AI 도우미 꺼짐: 화면에 도우미 버튼이 보이지 않아요. (.env의 OPENAI_API_KEY 확인)');
-  if (!DART_KEY) return console.log('DART 키 없음: 예시 데이터(3종목)로 동작해요. (.env 파일 확인)');
+  // 내 성향에 맞는 종목: 후보 데이터를 백그라운드로 모으고 하루에 한 번 갱신
+  // 업종 비교 데이터가 있어야 종목 화면과 같은 점수가 나와서, 업종 비교 수집이 끝난 뒤에 시작해요
+  if (!DART_KEY) {
+    picks.schedule();
+    return console.log('DART 키 없음: 예시 데이터(3종목)로 동작해요. (.env 파일 확인)');
+  }
   console.log('DART 키 확인됨: 상장사 목록을 준비하는 중...');
   const r = await ready;
   console.log(r.full ? `상장사 ${r.count.toLocaleString()}개 준비 완료 (${r.from})` : `상장사 목록 준비 실패: ${r.error}`);
-  if (!r.full) return;
+  if (!r.full) return picks.schedule();
   // 업종 비교 데이터: 백그라운드에서 모으고 하루에 한 번 갱신 (처음엔 10분 넘게 걸려요)
   const p = await peerStatus();
   console.log(p.metrics ? `업종 비교 데이터 ${p.metrics.toLocaleString()}건 있음, 오래된 것만 새로 받아요.`
     : '업종 비교 데이터를 처음 모으는 중이에요. 끝날 때까지는 기준표로 계산해요.');
-  syncPeers(DART_KEY);
+  syncPeers(DART_KEY).finally(() => picks.schedule());
   setInterval(() => syncPeers(DART_KEY), 24 * 60 * 60 * 1000).unref();
 });

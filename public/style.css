@@ -51,10 +51,16 @@ a { color: inherit; }
 .search input { flex: 1; border: 0; padding: 10px 14px; background: transparent; min-width: 0; }
 .search input:focus { outline: none; }
 .search button, .primary { background: var(--blue); color: #fff; border: 0; border-radius: 8px; padding: 0 28px; font-weight: 700; cursor: pointer; }
-.examples { margin: 16px 0 0; font-size: 0.85rem; color: var(--muted); display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
-#quickPicks { display: inline-flex; gap: 12px; flex-wrap: wrap; }
-#quickPicks button { background: none; border: 0; padding: 0; color: var(--ink); cursor: pointer; font-size: 0.85rem; }
-#quickPicks button:hover { color: var(--blue); text-decoration: underline; }
+/* 검색창 아래: 내 성향에 잘 맞는 종목 */
+.picks { max-width: 640px; margin: 18px auto 0; }
+.picks-title { margin: 0 0 8px; font-size: 0.85rem; font-weight: 700; color: var(--ink); }
+.picks-sub { margin-left: 8px; font-weight: 500; color: var(--muted); }
+.pick-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.pick-chips button { display: inline-flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 0.85rem; color: var(--ink); }
+.pick-chips button:hover { border-color: var(--blue); color: var(--blue); }
+.pick-score { font-size: 0.75rem; font-weight: 800; color: var(--blue); background: var(--blue-soft); border-radius: 999px; padding: 1px 7px; }
+.picks-note { margin: 8px 0 0; font-size: 0.75rem; color: var(--muted); }
 
 /* 공통 */
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px 40px; }

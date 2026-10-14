@@ -57,6 +57,12 @@ const SQLITE_SCHEMA = `
     updated_at INTEGER NOT NULL,
     PRIMARY KEY (corp_code, year)
   );
+  -- 외부 API 결과 저장 (서버가 재시작·잠들어도 다시 받지 않게)
+  CREATE TABLE IF NOT EXISTS api_cache (
+    key        TEXT    PRIMARY KEY,     -- 예: dart:005930, price:005930
+    value      TEXT    NOT NULL,        -- JSON
+    updated_at INTEGER NOT NULL
+  );
 `;
 
 // Postgres용 테이블 정의 (이메일은 항상 소문자로 저장해서 대소문자 구분이 필요 없음)
@@ -106,6 +112,11 @@ const POSTGRES_SCHEMA = `
     metrics    TEXT    NOT NULL,
     updated_at BIGINT  NOT NULL,
     PRIMARY KEY (corp_code, year)
+  );
+  CREATE TABLE IF NOT EXISTS api_cache (
+    key        TEXT   PRIMARY KEY,
+    value      TEXT   NOT NULL,
+    updated_at BIGINT NOT NULL
   );
 `;
 

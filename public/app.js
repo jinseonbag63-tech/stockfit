@@ -387,6 +387,7 @@ $('surveyForm').addEventListener('submit', () => {
   updateBadge();
   if (current) run(current.stock.code);
   renderWatch();
+  loadPicks();
 });
 
 // 로그인·회원가입
@@ -426,6 +427,7 @@ function applyAccount(u) {
   refreshCurrent();
   renderWatch();
   refreshChatForAccount();
+  loadPicks();
 }
 
 // 로그인 창의 네 가지 화면: 로그인, 회원가입, 비밀번호 찾기, 새 비밀번호 정하기
@@ -529,6 +531,7 @@ $('logoutBtn').addEventListener('click', async () => {
   refreshCurrent();
   renderWatch();
   refreshChatForAccount();
+  loadPicks();
 });
 $('resendVerify').addEventListener('click', async () => {
   try {
@@ -649,6 +652,36 @@ function enableChat(on) {
   document.querySelectorAll('.chat-only').forEach(el => { el.hidden = !on; });
 }
 
+// 검색창 아래: 내 성향 기준 적합도가 높은 종목 (서버가 후보 데이터를 다 모으기 전에는 예시 종목)
+let examplePicks = [];
+let picksTimer;
+const PICK_BASIS = { marketcap: n => `시가총액 상위 ${n}개 종목`, list: n => `주요 대형주 ${n}개`, sample: () => '예시 종목' };
+async function loadPicks() {
+  clearTimeout(picksTimer);
+  let d;
+  try { d = await api(`/api/picks?${new URLSearchParams(profile || {})}`); } catch { d = { ready: false }; }
+  const chip = (code, name, extra = '', title = '') =>
+    `<button type="button" data-q="${code}" data-name="${esc(name)}"${title ? ` title="${esc(title)}"` : ''}><strong>${esc(name)}</strong>${extra}</button>`;
+  if (d.ready && d.picks.length) {
+    $('picksLabel').textContent = profile ? '내 성향에 잘 맞는 종목' : '적합도가 높은 종목';
+    $('picksSub').textContent = profile ? `${riskFromAnswers(profile).riskLevel} 기준` : '기본 기준 · 성향을 정하면 바뀌어요';
+    $('quickPicks').innerHTML = d.picks.map(p => chip(p.code, p.name, `<span class="pick-score">${p.total}점</span>`,
+      p.reason.length ? `강점: ${p.reason.join(', ')}` : p.verdict)).join('');
+    show($('picksNote'), `${(PICK_BASIS[d.basis] ?? (n => `${n}개 종목`))(d.count)} 중 내 기준 적합도가 높은 순서예요. 재무·주가 데이터로 계산한 참고용이고, 투자 추천이 아니에요.`);
+  } else {
+    $('picksLabel').textContent = '예시 종목';
+    $('picksSub').textContent = !d.preparing ? '' : d.total
+      ? `내 성향에 맞는 종목을 찾는 중이에요 (${d.done}/${d.total})` : '내 성향에 맞는 종목을 찾을 준비를 하고 있어요';
+    $('quickPicks').innerHTML = examplePicks.map(s => chip(s.code, s.name)).join('');
+    show($('picksNote'), '');
+    if (d.preparing) picksTimer = setTimeout(loadPicks, 10000); // 다 모이면 자동으로 바뀌게
+  }
+}
+$('quickPicks').addEventListener('click', e => {
+  const b = e.target.closest('[data-q]');
+  if (b) { $('q').value = b.dataset.name; run(b.dataset.q); }
+});
+
 // 데이터 연결 상태: 어떤 키가 들어갔고 무엇이 동작하는지
 function renderDataStatus(s) {
   const p = s.peers;
@@ -692,8 +725,8 @@ function renderDataStatus(s) {
   try {
     const { full, picks } = await (await fetch('/api/stocks')).json();
     if (full) $('q').placeholder = '궁금한 종목명 또는 종목코드 (예: SK텔레콤, 005930)';
-    $('quickPicks').innerHTML = picks.map(s => `<button type="button" data-q="${s.code}">${s.name}</button>`).join('');
-    $('quickPicks').addEventListener('click', e => { const q = e.target.dataset.q; if (q) { $('q').value = e.target.textContent; run(q); } });
+    examplePicks = picks;
+    loadPicks();
     const { criteria } = await (await fetch('/api/criteria')).json();
     $('criteriaList').innerHTML = criteria.map(c => `
       <div class="crit"><strong>${esc(c.label)}</strong> <span class="crit-about">${esc(c.about)}</span>

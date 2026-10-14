@@ -51,7 +51,11 @@
         <datalist id="stockList"></datalist>
         <button type="submit">쉽게 분석하기</button>
       </form>
-      <p class="examples"><span>예시 종목</span><span id="quickPicks"></span></p>
+      <div class="picks" aria-live="polite">
+        <p class="picks-title"><span id="picksLabel">예시 종목</span><span id="picksSub" class="picks-sub"></span></p>
+        <div id="quickPicks" class="pick-chips"></div>
+        <p id="picksNote" class="picks-note" hidden></p>
+      </div>
     </section>
 
     <section id="analysis" class="wrap">
@@ -66,7 +70,7 @@
       <p id="notice" class="notice" hidden></p>
       <p id="error" class="error" role="alert" hidden></p>
 
-      <div id="empty" class="empty">위에서 종목을 검색하거나 예시 종목을 눌러보세요.</div>
+      <div id="empty" class="empty">위에서 종목을 검색하거나, 검색창 아래 종목을 눌러보세요.</div>
 
       <div id="result" class="grid" hidden>
         <article class="card company">
