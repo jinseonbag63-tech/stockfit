@@ -1,5 +1,5 @@
 // 종목 소식 모으기: DART 공시 목록 + 네이버 뉴스 검색
-// - 공시는 DART 키, 뉴스는 네이버 검색 API 키(NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)가 있어야 동작
+// - 공시는 DART 키, 뉴스는 NAVER API HUB 검색 키(NAVER_CLIENT_ID, NAVER_CLIENT_SECRET)가 있어야 동작
 // - 같은 종목은 15분 동안 다시 부르지 않음
 import { callDart } from './dart.js';
 
@@ -103,14 +103,20 @@ function publisher(link) {
   } catch { return ''; }
 }
 
+// 네이버 검색 API는 2026년에 개발자센터에서 NAVER API HUB(네이버클라우드)로 옮겨졌어요.
+// 검색 조건과 응답 형식은 같고, 주소와 인증 헤더 이름만 달라요.
 async function fetchNews({ id, secret }, stock) {
-  const url = new URL('https://openapi.naver.com/v1/search/news.json');
+  const url = new URL('https://naverapihub.apigw.ntruss.com/search/v1/news');
   url.searchParams.set('query', `"${stock.name}"`); // 따옴표: 이름이 정확히 들어간 기사만
   url.searchParams.set('display', String(NEWS_PER_STOCK));
   url.searchParams.set('sort', 'date');
-  const res = await fetch(url, { headers: { 'X-Naver-Client-Id': id, 'X-Naver-Client-Secret': secret } });
+  url.searchParams.set('format', 'json');
+  const res = await fetch(url, { headers: { 'X-NCP-APIGW-API-KEY-ID': id, 'X-NCP-APIGW-API-KEY': secret } });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`네이버 뉴스 오류 (HTTP ${res.status}) ${data.errorMessage ?? ''}`.trim());
+  if (!res.ok) {
+    const msg = data.errorMessage ?? data.error?.message ?? data.message ?? '';
+    throw new Error(`네이버 뉴스 오류 (HTTP ${res.status}) ${msg}`.trim());
+  }
   return (data.items ?? [])
     .map(it => ({ ...it, link: it.originallink || it.link }))
     .filter(it => /^https?:\/\//.test(it.link))

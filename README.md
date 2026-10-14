@@ -149,7 +149,7 @@ Render 무료 플랜은 서버 파일이 재시작·재배포·잠들 때마다 
 | `DART_API_KEY` | opendart.fss.or.kr | 예시 3종목만 |
 | `DATA_GO_KR_KEY` | data.go.kr "금융위원회_주식시세정보" (인코딩·디코딩 키 아무거나) | 가격 수준·주가 안정성·위험 등급 빠짐 |
 | `ECOS_API_KEY` | ecos.bok.or.kr/api | 금리 반영 빠짐 |
-| `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | developers.naver.com (검색 API) | 뉴스 빠짐 (공시는 보여줌) |
+| `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | 네이버클라우드 NAVER API HUB (검색 > 뉴스). 2026년부터 개발자센터에서는 신규 발급이 안 돼요 | 뉴스 빠짐 (공시는 보여줌) |
 | `OPENAI_API_KEY` (+ `OPENAI_MODEL`) | platform.openai.com (결제 수단 등록 필요) | AI 도우미 버튼 숨김 |
 
 - **업종 비교 데이터**: DART 키가 있으면 서버가 켜질 때 상장사 전체의 업종 코드와 재무 지표를 백그라운드로 모아서 DB(`company_info`, `peer_metrics`)에 저장해요. 처음에는 기업개황을 상장사 수만큼 불러서 **10분 넘게** 걸리고, 그동안은 기준표로 계산해요. 이후엔 하루에 한 번 오래된 것만 갱신해요.
