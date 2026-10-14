@@ -5,7 +5,8 @@
 // 이용 조건: 공공누리 4유형(출처 표시, 상업적 이용 금지, 변경 금지)
 import { toNum } from './dart.js';
 
-const BASE = 'https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo';
+// 현재 버전(V2) 주소. 예전 주소(/service/GetStockSecuritiesInfoService/getStockPriceInfo)는 빈 결과를 돌려줘요
+const BASE = 'https://apis.data.go.kr/1160100/GetStockSecuritiesInfoService_V2/getStockPriceInfo_V2';
 const STATS_TTL = 6 * 60 * 60 * 1000;
 const CAPS_TTL = 12 * 60 * 60 * 1000;
 const DAILY_LIMIT = 0.3; // 하루 가격제한폭 ±30%: 이보다 큰 변화는 액면분할 등으로 보고 제외
@@ -33,9 +34,14 @@ async function call(key, params) {
   try { data = JSON.parse(text); } catch { throw new Error(`시세 API 응답을 읽지 못했어요 (HTTP ${res.status})`); }
   const header = data.response?.header;
   if (header && header.resultCode !== '00') throw new Error(`시세 API 오류 ${header.resultCode}: ${header.resultMsg}`);
-  const items = data.response?.body?.items?.item ?? [];
-  return Array.isArray(items) ? items : [items];
+  const body = data.response?.body;
+  const items = body?.items?.item ?? (Array.isArray(body?.items) ? body.items : []);
+  const list = Array.isArray(items) ? items : [items];
+  // 비어 있으면 원인을 찾을 수 있게 응답 모양을 남김 (키 값은 들어 있지 않음)
+  lastEmpty = list.length ? null : `응답 코드 ${header?.resultCode ?? '없음'}, 전체 ${body?.totalCount ?? '?'}건, 응답 항목: ${Object.keys(data.response ?? data).join(',')}`;
+  return list;
 }
+let lastEmpty = null;
 
 const sameCode = (item, code) => String(item.srtnCd ?? '').replace(/^A/, '') === code;
 
@@ -98,7 +104,7 @@ export async function getPriceStats(key, code) {
     .map(i => ({ date: String(i.basDt), close: toNum(i.clpr), cap: toNum(i.mrktTotAmt) }))
     .filter(r => r.close > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
-  if (!rows.length) throw new Error('이 종목의 시세 데이터가 없어요.');
+  if (!rows.length) throw new Error(`이 종목의 시세 데이터가 없어요. (${lastEmpty ?? `받은 ${items.length}건 중 종목코드 일치 없음`})`);
   const latest = rows[rows.length - 1];
   const data = { asOf: latest.date, close: latest.close, marketCap: latest.cap, ...priceStats(rows) };
   statsCache.set(code, { at: Date.now(), data });
@@ -118,5 +124,5 @@ export async function getMarketCaps(key) {
       return caps;
     }
   }
-  throw new Error('최근 10일 동안의 시세 데이터를 찾지 못했어요.');
+  throw new Error(`최근 10일 동안의 시세 데이터를 찾지 못했어요. (${lastEmpty})`);
 }
