@@ -147,7 +147,8 @@ a { color: inherit; }
 .fit-parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .fit-parts li { display: flex; justify-content: space-between; gap: 8px; font-size: 0.88rem; }
 .fit-parts .pts { font-weight: 800; font-variant-numeric: tabular-nums; }
-.fit-parts .penalty { border-top: 1px solid rgba(255, 255, 255, 0.15); padding-top: 8px; color: #ffd9a3; }
+.fit-notice { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(255, 196, 120, 0.14);
+  border-left: 3px solid #ffc478; color: #ffe2b8; font-size: 0.82rem; line-height: 1.5; }
 .fit-parts .why { display: block; font-size: 0.75rem; color: #9fb0d6; }
 .fit-warnings { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
 .fit-warnings li { background: rgba(255, 196, 120, 0.14); color: #ffd9a3; border-radius: 8px; padding: 8px 10px; font-size: 0.8rem; line-height: 1.45; }

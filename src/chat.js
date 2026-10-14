@@ -45,6 +45,7 @@ const SYSTEM = `너는 StockFit의 "AI 도우미"야. StockFit은 주식을 처�
 export function buildContext({ stock, fit, profile, indicators, price, macro, sample, mode }) {
   const lines = [`[사용자] 투자성향: ${profile.riskLevel}${profile.complete ? '' : ' (간이 진단)'}, 화면 모드: ${mode === 'expert' ? '전문가' : '초보자'}`];
   if (mode === 'expert') lines.push('전문가 모드이므로 용어를 그대로 써도 되지만, 그래도 간결하게.');
+  if (profile.stockNotice) lines.push(`성향 안내(화면에 항상 표시됨): ${profile.stockNotice}`);
   if (!stock) return `${lines.join('\n')}\n[분석 데이터] 지금 보고 있는 종목이 없어요.`;
   lines.push(`[분석 데이터] ${stock.name} (${stock.code}, ${stock.market || '시장 정보 없음'}, 업종: ${stock.sector})`);
   if (sample) lines.push('주의: 이 종목 수치는 DART 키가 없어 보여주는 가상의 예시 데이터예요. 실제 회사 수치가 아니라고 꼭 알려줘.');

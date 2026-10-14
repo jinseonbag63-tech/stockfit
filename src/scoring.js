@@ -2,7 +2,9 @@
 // 1) 설문 → 투자성향(금융투자협회 5단계 이름) + 기준별 가중치 (+ 고금리면 안정성 비중↑)
 // 2) 지표마다 0~100점: 같은 업종 회사가 충분하면 업종 안 순위(백분위), 아니면 고정 기준표
 // 3) 기준 점수 = 지표 점수 평균, 적합도 = 기준 점수 × 가중치의 합 (데이터 없는 기준은 빼고 비중 재조정)
-// 4) 주가 위험 등급이 내 성향이 감당할 수 있는 수준을 넘으면 점수를 낮추고 경고 (적합성 원칙 구조를 따름)
+// 4) 주가 위험 등급은 점수에 넣지 않고 안내로만 보여줌 (주가 변동은 "주가 안정성" 기준에서 이미 반영)
+//    개별 주식은 펀드 기준 위험 등급으로 거의 다 1~2등급이라, 점수에서 깎으면 안정형에게 모든 종목이 낮아져 비교가 안 돼요.
+//    대신 안정형·안정추구형에게는 "주식 자체가 원금 손실 위험이 있는 상품"이라는 안내를 항상 보여줘요.
 // 같은 입력이면 언제나 같은 점수가 나와요.
 import { RISK_LEVELS, riskFromAnswers } from '../public/survey.js';
 
@@ -62,11 +64,14 @@ export const METRICS = {
   maxDrawdown: { criterion: 'volatility', label: '최대 하락폭 (1년)', higher: true, fixed: [-60, -10], rule: '−60% 이하 0점 → −10% 이내 100점' },
 };
 
-// 성향별로 감당할 수 있는 가장 위험한 등급 (1등급이 가장 위험). 증권사 적합성 표의 일반적인 구조를 따름
+// 성향별로 감당할 수 있는 가장 위험한 등급 (1등급이 가장 위험). 증권사 적합성 표의 일반적인 구조를 따름 (안내용)
 const ALLOWED_GRADE = [5, 4, 3, 2, 1];
-// 감당 범위를 1·2·3단계 이상 넘을 때 점수를 낮추는 비율
-// (상한으로 자르면 개별 주식은 대부분 1~2등급이라 안정형에게 모든 종목이 같은 점수가 돼서, 순서는 유지되게 비율로)
-const RISK_PENALTY = [0.1, 0.2, 0.3];
+
+// 주식 자체가 성향과 맞지 않을 수 있는 성향에게 항상 보여주는 안내 (점수와 별개)
+const STOCK_NOTICE = [
+  '원금 손실을 원하지 않는다면 주식은 원래 맞지 않는 상품이에요. 주가가 떨어지면 원금이 줄어요. 아래 점수는 "그래도 주식을 고른다면" 어떤 종목이 내 성향에 더 가까운지 비교한 거예요.',
+  '주식은 원금 손실이 생길 수 있는 상품이에요. 아래 점수는 주식들 사이에서 어떤 종목이 내 성향에 더 가까운지 비교한 거예요.',
+];
 
 // 설문 답변: public/survey.js의 q1~q7 (q1~q3만 있으면 예전 간이 진단)
 // 성향은 7문항 점수로, 기준별 비중은 선호 기업(q1)·투자 기간(q2)·손실 감내도(q3)로 정해요
@@ -92,7 +97,8 @@ export function buildProfile(answers = {}, macro = null) {
 
   const total = Object.values(w).reduce((a, b) => a + b, 0);
   const weights = Object.fromEntries(Object.entries(w).map(([k, v]) => [k, v / total]));
-  return { answers: a, complete, riskIndex: risk, riskLevel: RISK_LEVELS[risk], allowedGrade: ALLOWED_GRADE[risk], weights, notes };
+  return { answers: a, complete, riskIndex: risk, riskLevel: RISK_LEVELS[risk], allowedGrade: ALLOWED_GRADE[risk],
+           stockNotice: STOCK_NOTICE[risk] ?? null, weights, notes };
 }
 
 // 지표 하나의 점수. rank(key, value)는 업종 비교 결과({ score, peers }) 또는 null
@@ -127,22 +133,20 @@ export function computeFit(metrics, profile, ctx = {}) {
     p.appliedWeight = p.score == null ? 0 : p.weight / wSum;
     p.contribution = p.score == null ? 0 : p.score * p.appliedWeight;
   }
-  let total = Math.round(parts.reduce((a, p) => a + p.contribution, 0));
+  const total = Math.round(parts.reduce((a, p) => a + p.contribution, 0));
 
   const warnings = [];
   if (metrics.altmanZ != null && metrics.altmanZ < 1.1) {
     warnings.push('재무제표로 계산한 부실위험 점수가 위험 구간(1.1 미만)이에요. 빚과 손실을 꼭 확인해보세요.');
   }
 
-  // 주가 위험 등급 vs 내 성향
+  // 주가 위험 등급 vs 내 성향 (점수는 그대로, 안내만)
   let risk = null;
   if (ctx.risk) {
-    const excess = profile.allowedGrade - ctx.risk.grade;
-    risk = { ...ctx.risk, allowedGrade: profile.allowedGrade, excess: Math.max(0, excess), penalty: 0, before: total };
+    const excess = Math.max(0, profile.allowedGrade - ctx.risk.grade);
+    risk = { ...ctx.risk, allowedGrade: profile.allowedGrade, excess };
     if (excess > 0) {
-      risk.penalty = RISK_PENALTY[Math.min(excess, RISK_PENALTY.length) - 1];
-      total = Math.round(total * (1 - risk.penalty));
-      warnings.push(`최근 주가 움직임으로 본 위험은 ${ctx.risk.grade}등급(${ctx.risk.label})이에요. ${profile.riskLevel}이 감당하기 어려운 수준이라 적합도를 ${risk.penalty * 100}% 낮췄어요 (${risk.before}점 → ${total}점).`);
+      warnings.push(`최근 3년 주가 움직임으로 본 위험은 ${ctx.risk.grade}등급(${ctx.risk.label})이에요. ${profile.riskLevel}이 보통 감당하는 수준(${profile.allowedGrade}등급)보다 위험해요. 개별 주식은 대부분 1~2등급이에요.`);
     }
   }
 

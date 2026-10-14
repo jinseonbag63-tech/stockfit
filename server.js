@@ -334,7 +334,7 @@ const server = http.createServer(async (req, res) => {
                  market: MARKET[data.info?.market] || '', sector: industryName(data.info?.industryCode) },
         source: data.source, sample: data.sample,
         notice: notices.filter(Boolean).join(' ') || null,
-        profile, fit, summary: summarize(fit), easy: beginnerSummary(fit, profile),
+        profile, fit, summary: summarize(fit), easy: beginnerSummary(fit),
         indicators: explainMetrics(metrics, profile, fit),
         checklist: data.checklist ?? null,
         price: price ? { asOf: price.asOf, close: price.close, return1y: price.return1y } : null,

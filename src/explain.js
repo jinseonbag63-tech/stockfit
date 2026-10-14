@@ -192,20 +192,14 @@ const EASY = {
 };
 
 // 내 성향에서 비중이 큰 기준부터: 60점 이상은 "맞는 점", 40점 미만은 "조심할 점"
-export function beginnerSummary(fit, profile) {
+// (주식 자체의 원금 손실 위험은 성향별 안내(profile.stockNotice)로 따로 보여줘요)
+export function beginnerSummary(fit) {
   const scored = fit.parts.filter(p => p.score != null).sort((a, b) => b.weight - a.weight);
   const mine = p => (p.weight >= 0.18 ? '내가 중요하게 보는 ' : '');
   const goods = scored.filter(p => p.score >= 60).slice(0, 3)
     .map(p => `${mine(p)}${p.label}: ${EASY[p.key][0]}`);
   const cautions = scored.filter(p => p.score < 40).slice(0, 3)
     .map(p => `${mine(p)}${p.label}: ${EASY[p.key][1]}`);
-  if (fit.risk?.penalty) {
-    // 주가 안정성 점수가 좋으면 "다른 주식보다는 덜 출렁이지만"으로 이어서, 맞는 점과 모순처럼 보이지 않게
-    const calmer = fit.parts.find(p => p.key === 'volatility')?.score >= 60;
-    cautions.unshift(calmer
-      ? `다른 주식들보다는 덜 출렁이는 편이지만, 주식은 원래 가격이 크게 움직일 수 있어서 ${profile.riskLevel}인 나에게는 부담이 될 수 있어요. 그래서 점수를 조금 낮췄어요.`
-      : `이 종목은 주가가 크게 움직이는 편이라, ${profile.riskLevel}인 나에게는 부담이 될 수 있어요. 그래서 점수를 조금 낮췄어요.`);
-  }
   if (fit.parts.find(p => p.key === 'stability')?.items.find(i => i.key === 'altmanZ')?.value < 1.1) {
     cautions.unshift('재무제표로 보면 회사가 어려워질 위험이 높은 편이에요. 꼭 신중하게 살펴보세요.');
   }

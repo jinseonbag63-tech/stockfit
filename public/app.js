@@ -119,6 +119,7 @@ function renderResult(d) {
     : d.profile.complete ? `${d.profile.riskLevel} 기준으로 계산했어요`
     : `${d.profile.riskLevel}(3문항 간이 진단) 기준이에요. 아래 버튼으로 7문항에 답하면 더 정확해요`;
   show($('fitNotes'), d.profile.notes?.join(' '));
+  show($('fitStockNotice'), d.profile.stockNotice); // 안정형·안정추구형: 주식 자체의 원금 손실 위험 안내
   $('fitGoods').innerHTML = d.easy.goods.map(t => `<li>${esc(t)}</li>`).join('');
   $('fitCautions').innerHTML = d.easy.cautions.map(t => `<li>${esc(t)}</li>`).join('');
   $('fitWarnings').hidden = !d.fit.warnings.length;
@@ -128,9 +129,7 @@ function renderResult(d) {
     .map(p => `<li><span>${p.label}<span class="why">${p.score == null
       ? (missingText(d, p.key) === '시세 키 필요' ? '시세 키를 넣으면 계산해요' : '데이터가 없어 계산에서 뺐어요')
       : `기준 점수 ${Math.round(p.score)}점 × 내 비중 ${Math.round(p.appliedWeight * 100)}%`}</span></span>
-      <span class="pts">+${p.contribution.toFixed(1)}</span></li>`).join('')
-    + (d.fit.risk?.penalty ? `<li class="penalty"><span>주가 위험 조정<span class="why">감당 범위를 넘어서 ${d.fit.risk.penalty * 100}% 낮췄어요</span></span>
-      <span class="pts">−${d.fit.risk.before - d.fit.total}</span></li>` : '');
+      <span class="pts">+${p.contribution.toFixed(1)}</span></li>`).join('');
   const market = [];
   if (d.macro?.baseRate != null) market.push(`기준금리 ${d.macro.baseRate}%`);
   if (d.macro?.bond3y != null) market.push(`국고채 3년 ${d.macro.bond3y}%`);
