@@ -694,7 +694,7 @@ function renderDataStatus(s) {
     ['업종 비교 데이터', !s.dart ? 'off' : p.error ? 'error' : p.metrics ? 'on' : 'wait', peerText],
     ['주가 시세 (공공데이터포털)', s.price, s.price === 'off' ? '없으면 가격 수준·주가 안정성을 빼고 계산해요.' : s.priceError || '변동성·위험 등급·PER·PBR 계산'],
     ['금리 (한국은행 ECOS)', s.macro, s.macro === 'off' ? '없으면 금리 반영 없이 계산해요.' : s.macroError || '배당과 국고채 금리 비교, 고금리 반영'],
-    ['뉴스 (네이버 검색)', s.news ? 'on' : 'off', s.news ? '종목 뉴스 표시' : '없으면 공시만 보여줘요.'],
+    ['뉴스 (네이버 검색)', !s.news ? 'off' : s.newsError ? 'error' : 'on', !s.news ? '없으면 공시만 보여줘요.' : s.newsError || '종목 뉴스 표시'],
     ['AI 도우미 (OpenAI)', s.ai ? 'on' : 'off', s.ai ? `${s.aiModel} 모델 사용` : '없으면 도우미 버튼이 보이지 않아요.'],
   ];
   const LABEL = { on: '연결됨', off: '키 없음', error: '오류', wait: '준비 중' };

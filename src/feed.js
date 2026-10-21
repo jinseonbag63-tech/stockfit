@@ -8,6 +8,8 @@ const DISCLOSURE_DAYS = 90;
 const NEWS_PER_STOCK = 10;
 const DISCLOSURES_PER_STOCK = 20;
 const cache = new Map(); // "news:005930" → { at, items }
+let lastNewsError = null; // 데이터 연결 상태 화면에 보여줄 마지막 뉴스 오류 (키 값은 들어 있지 않음)
+export const newsError = () => lastNewsError;
 
 async function cached(key, load) {
   const hit = cache.get(key);
@@ -111,12 +113,15 @@ async function fetchNews({ id, secret }, stock) {
   url.searchParams.set('display', String(NEWS_PER_STOCK));
   url.searchParams.set('sort', 'date');
   url.searchParams.set('format', 'json');
-  const res = await fetch(url, { headers: { 'X-NCP-APIGW-API-KEY-ID': id, 'X-NCP-APIGW-API-KEY': secret } });
+  const res = await fetch(url, { headers: { 'X-NCP-APIGW-API-KEY-ID': id, 'X-NCP-APIGW-API-KEY': secret } })
+    .catch(err => { lastNewsError = `네이버 뉴스 연결 실패: ${err.cause?.code ?? err.message}`; throw new Error(lastNewsError); });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = data.errorMessage ?? data.error?.message ?? data.message ?? '';
-    throw new Error(`네이버 뉴스 오류 (HTTP ${res.status}) ${msg}`.trim());
+    const msg = data.errorMessage ?? data.error?.message ?? data.error?.errorCode ?? data.message ?? JSON.stringify(data).slice(0, 200);
+    lastNewsError = `네이버 뉴스 오류 (HTTP ${res.status}) ${msg}`.trim();
+    throw new Error(lastNewsError);
   }
+  lastNewsError = null;
   return (data.items ?? [])
     .map(it => ({ ...it, link: it.originallink || it.link }))
     .filter(it => /^https?:\/\//.test(it.link))

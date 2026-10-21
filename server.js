@@ -22,7 +22,7 @@ import { askAssistant, buildContext, DEFAULT_MODEL } from './src/chat.js';
 import { initAuth, signup, login, createSession, userFromToken, endSession, updateUserData, publicUser,
          findUser, issueEmailToken, verifyEmail, resetPassword, SESSION_COOKIE, SESSION_MAX_AGE } from './src/auth.js';
 import { sendMail, mailConfigured, verifyMail, resetMail } from './src/mail.js';
-import { getFeed } from './src/feed.js';
+import { getFeed, newsError } from './src/feed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -343,7 +343,7 @@ const server = http.createServer(async (req, res) => {
         dart: Boolean(DART_KEY), fullList: hasFullList(),
         price: sourceState(PRICE_KEY, 'price'), priceError: sourceErrors.price,
         macro: sourceState(ECOS_KEY, 'macro'), macroError: sourceErrors.macro,
-        news: Boolean(NAVER.id && NAVER.secret), mail: MAIL_ON,
+        news: Boolean(NAVER.id && NAVER.secret), newsError: newsError(), mail: MAIL_ON,
         ai: Boolean(OPENAI_KEY), aiModel: OPENAI_KEY ? OPENAI_MODEL : null,
         db: db.kind, peers: await peerStatus(),
       }, { 'Cache-Control': 'no-store' });
