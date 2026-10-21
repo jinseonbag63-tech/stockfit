@@ -10,6 +10,7 @@ const DISCLOSURES_PER_STOCK = 20;
 const cache = new Map(); // "news:005930" → { at, items }
 let lastNewsError = null; // 데이터 연결 상태 화면에 보여줄 마지막 뉴스 오류 (키 값은 들어 있지 않음)
 export const newsError = () => lastNewsError;
+export const newsApiName = () => (naverApi ? NAVER_APIS[naverApi].name : null);
 
 async function cached(key, load) {
   const hit = cache.get(key);
@@ -107,18 +108,52 @@ function publisher(link) {
 
 // 네이버 검색 API는 2026년에 개발자센터에서 NAVER API HUB(네이버클라우드)로 옮겨졌어요.
 // 검색 조건과 응답 형식은 같고, 주소와 인증 헤더 이름만 달라요.
-async function fetchNews({ id, secret }, stock) {
-  const url = new URL('https://naverapihub.apigw.ntruss.com/search/v1/news');
+// 키를 어디서 받았는지에 따라 맞는 쪽이 달라서, HUB가 인증을 거절하면(401) 예전 개발자센터 방식으로 한 번 더 시도하고
+// 되는 쪽을 기억해요.
+const NAVER_APIS = {
+  hub: { name: 'NAVER API HUB', url: 'https://naverapihub.apigw.ntruss.com/search/v1/news', idHeader: 'X-NCP-APIGW-API-KEY-ID', secretHeader: 'X-NCP-APIGW-API-KEY' },
+  legacy: { name: '개발자센터', url: 'https://openapi.naver.com/v1/search/news.json', idHeader: 'X-Naver-Client-Id', secretHeader: 'X-Naver-Client-Secret' },
+};
+let naverApi = null; // 한 번 성공한 쪽 ('hub' | 'legacy')
+
+async function callNaver(kind, { id, secret }, stock) {
+  const api = NAVER_APIS[kind];
+  const url = new URL(api.url);
   url.searchParams.set('query', `"${stock.name}"`); // 따옴표: 이름이 정확히 들어간 기사만
   url.searchParams.set('display', String(NEWS_PER_STOCK));
   url.searchParams.set('sort', 'date');
-  url.searchParams.set('format', 'json');
-  const res = await fetch(url, { headers: { 'X-NCP-APIGW-API-KEY-ID': id, 'X-NCP-APIGW-API-KEY': secret } })
-    .catch(err => { lastNewsError = `네이버 뉴스 연결 실패: ${err.cause?.code ?? err.message}`; throw new Error(lastNewsError); });
+  if (kind === 'hub') url.searchParams.set('format', 'json');
+  const res = await fetch(url, { headers: { [api.idHeader]: id, [api.secretHeader]: secret } })
+    .catch(err => { throw Object.assign(new Error(`${api.name} 연결 실패: ${err.cause?.code ?? err.message}`), { status: 0 }); });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = data.errorMessage ?? data.error?.message ?? data.error?.errorCode ?? data.message ?? JSON.stringify(data).slice(0, 200);
-    lastNewsError = `네이버 뉴스 오류 (HTTP ${res.status}) ${msg}`.trim();
+    throw Object.assign(new Error(`${api.name} HTTP ${res.status} ${msg}`.trim()), { status: res.status });
+  }
+  return data;
+}
+
+async function fetchNews(keys, stock) {
+  let data;
+  try {
+    if (naverApi) {
+      data = await callNaver(naverApi, keys, stock);
+    } else {
+      try {
+        data = await callNaver('hub', keys, stock);
+        naverApi = 'hub';
+      } catch (err) {
+        if (err.status !== 401) throw err;
+        try {
+          data = await callNaver('legacy', keys, stock);
+          naverApi = 'legacy';
+        } catch (err2) {
+          throw new Error(`${err.message} / ${err2.message}`);
+        }
+      }
+    }
+  } catch (err) {
+    lastNewsError = `네이버 뉴스 오류: ${err.message}`;
     throw new Error(lastNewsError);
   }
   lastNewsError = null;
