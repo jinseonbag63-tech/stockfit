@@ -1,5 +1,6 @@
 // 화면 동작: 설문 → 분석 요청 → 결과 표시, 관심종목 관리
 import { SURVEY, riskFromAnswers } from './survey.js';
+import { initTrend, openTrend } from './technical.js';
 
 const $ = id => document.getElementById(id);
 
@@ -341,12 +342,12 @@ function renderWatchFeed() {
 bindChips($('watchFeedFilter'), f => { watchFeedFilter = f; watchFeedLimit = WATCH_PAGE; renderWatchFeed(); });
 $('watchFeedMore').addEventListener('click', () => { watchFeedLimit += WATCH_PAGE; renderWatchFeed(); });
 
-// 검색
+// 검색 (자동완성 목록은 종목 분석·주가 흐름 검색창이 같이 씀)
 $('searchForm').addEventListener('submit', e => { e.preventDefault(); run($('q').value); });
 let searchTimer;
-$('q').addEventListener('input', () => {
+for (const input of [$('q'), $('trendQ')]) input.addEventListener('input', () => {
   clearTimeout(searchTimer);
-  const q = $('q').value.trim();
+  const q = input.value.trim();
   if (!q) return;
   searchTimer = setTimeout(async () => {
     try {
@@ -355,6 +356,10 @@ $('q').addEventListener('input', () => {
     } catch {}
   }, 200);
 });
+
+// 주가 흐름 화면 (#trend, technical.js)
+initTrend({ $, esc, show, api, onAnalyze: (code, name) => { location.hash = '#analysis'; $('q').value = name; run(code); } });
+$('trendLink').addEventListener('click', () => current && openTrend(current.stock.code, current.stock.name));
 
 // 설문
 // 설문 문항은 survey.js 한 곳에서 관리 (서버도 같은 파일로 성향을 계산)

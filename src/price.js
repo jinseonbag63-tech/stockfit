@@ -1,5 +1,5 @@
 // 주가 데이터: 공공데이터포털 "금융위원회_주식시세정보" (.env의 DATA_GO_KR_KEY)
-// - 종목별 3년 일별 종가 → 변동성, 최대 하락폭, 위험 등급(97.5% VaR)
+// - 종목별 3년 일별 시세 → 변동성, 최대 하락폭, 위험 등급(97.5% VaR), 주가 흐름 화면(technical.js)
 // - 전체 종목의 최근 시가총액 → PER·PBR (업종 비교 포함)
 // 데이터는 실시간이 아니라 다음 영업일 오후에 업데이트돼요.
 // 이용 조건: 공공누리 4유형(출처 표시, 상업적 이용 금지, 변경 금지)
@@ -93,22 +93,31 @@ export function priceStats(rows) {
   };
 }
 
-const statsCache = new Map();
-export async function getPriceStats(key, code) {
-  const hit = statsCache.get(code);
-  if (hit && Date.now() - hit.at < STATS_TTL) return hit.data;
+// 종목별 3년 일별 시세 (시가·고가·저가·종가·거래량·등락률·시가총액). 위험 지표와 주가 흐름 화면이 같이 써요
+const historyCache = new Map();
+const HISTORY_CACHE_MAX = 300; // 메모리를 너무 쓰지 않게 오래된 것부터 지움
+export async function getPriceHistory(key, code) {
+  const hit = historyCache.get(code);
+  if (hit && Date.now() - hit.at < STATS_TTL) return hit.rows;
   const begin = new Date();
   begin.setFullYear(begin.getFullYear() - 3);
   const items = await call(key, { likeSrtnCd: code, beginBasDt: ymd(begin), numOfRows: '1000', pageNo: '1' });
   const rows = items.filter(i => sameCode(i, code))
-    .map(i => ({ date: String(i.basDt), close: toNum(i.clpr), cap: toNum(i.mrktTotAmt) }))
+    .map(i => ({ date: String(i.basDt), open: toNum(i.mkp), high: toNum(i.hipr), low: toNum(i.lopr), close: toNum(i.clpr),
+                 volume: toNum(i.trqu), change: toNum(i.fltRt), cap: toNum(i.mrktTotAmt) }))
     .filter(r => r.close > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
   if (!rows.length) throw new Error(`이 종목의 시세 데이터가 없어요. (${lastEmpty ?? `받은 ${items.length}건 중 종목코드 일치 없음`})`);
+  historyCache.delete(code);
+  historyCache.set(code, { at: Date.now(), rows });
+  if (historyCache.size > HISTORY_CACHE_MAX) historyCache.delete(historyCache.keys().next().value);
+  return rows;
+}
+
+export async function getPriceStats(key, code) {
+  const rows = await getPriceHistory(key, code);
   const latest = rows[rows.length - 1];
-  const data = { asOf: latest.date, close: latest.close, marketCap: latest.cap, ...priceStats(rows) };
-  statsCache.set(code, { at: Date.now(), data });
-  return data;
+  return { asOf: latest.date, close: latest.close, marketCap: latest.cap, ...priceStats(rows) };
 }
 
 // 전체 종목의 최근 시가총액 (업종 PER·PBR 비교용). 최근 영업일을 찾아 하루치를 한 번에

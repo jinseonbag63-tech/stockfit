@@ -15,6 +15,7 @@
       <nav class="menu" aria-label="주요 메뉴">
         <a href="#analysis" class="active">종목 분석</a>
         <a href="#watch">관심종목</a>
+        <a href="#trend">주가 흐름</a>
         <button type="button" id="navProfile">내 투자성향</button>
       </nav>
       <div class="nav-right">
@@ -41,7 +42,7 @@
       </div>
     </div>
 
-    <section class="hero">
+    <section class="hero view-main">
       <p class="eyebrow">복잡한 주식, 쉬운 시작</p>
       <h1>이 회사, 나와 잘 맞을까요?</h1>
       <p class="hero-sub">종목만 검색하세요. 어려운 정보는 쉽게 풀어드릴게요.</p>
@@ -58,7 +59,7 @@
       </div>
     </section>
 
-    <section id="analysis" class="wrap">
+    <section id="analysis" class="wrap view-main">
       <div class="section-head">
         <div>
           <p class="section-eyebrow">한눈에 보는 종목</p>
@@ -80,6 +81,7 @@
               <div>
                 <h3><span id="stockName"></span> <span id="stockMarket" class="market"></span></h3>
                 <p id="stockMeta" class="meta"></p>
+                <button type="button" id="trendLink" class="link-btn trend-link">이 종목 주가 흐름 보기 →</button>
               </div>
             </div>
             <button type="button" id="watchBtn" class="watch-btn" aria-pressed="false">☆ 관심종목</button>
@@ -165,7 +167,7 @@
       </div>
     </section>
 
-    <section id="watch" class="wrap watch">
+    <section id="watch" class="wrap watch view-main">
       <div class="section-head">
         <div>
           <p class="section-eyebrow">관심종목</p>
@@ -193,7 +195,7 @@
       </div>
     </section>
 
-    <section class="wrap">
+    <section class="wrap view-main">
       <details class="how card">
         <summary>적합도는 어떻게 계산하나요?</summary>
         <div class="beginner-only">
@@ -211,6 +213,96 @@
         </div>
         <p class="fine">투자 권유가 아닌 정보 제공 목적의 분석이에요. 투자성향은 투자자정보확인서 항목을 참고한 자체 설문으로 정한 것이고, 증권사의 공식 투자성향 진단을 대신하지 않아요. 원금 손실을 원하지 않는다고 답하면 다른 답과 상관없이 안정형으로 봐요.</p>
       </details>
+    </section>
+    <!-- 주가 흐름 화면 (#trend): 메뉴에서 열면 위 화면 대신 보여요. 동작은 technical.js -->
+    <section id="trend" class="wrap trend view-trend" aria-labelledby="trendTitle">
+      <div class="trend-hero">
+        <p class="eyebrow">주가 흐름</p>
+        <h1 id="trendTitle">지금 주가, 과열일까 침체일까?</h1>
+        <p class="hero-sub">최근 주가 움직임으로 계산한 지표를 쉽게 풀어드려요.</p>
+        <form id="trendForm" class="search" autocomplete="off">
+          <label for="trendQ" class="sr-only">종목명 또는 종목코드</label>
+          <input id="trendQ" list="stockList" placeholder="궁금한 종목명 또는 종목코드" required />
+          <button type="submit">주가 흐름 보기</button>
+        </form>
+      </div>
+
+      <p id="trendError" class="error" role="alert" hidden></p>
+      <div id="trendEmpty" class="empty">종목을 검색하면 최근 주가가 과열인지 침체인지, 어느 쪽으로 움직이는지 보여드려요.</div>
+
+      <div id="trendResult" class="trend-body" hidden>
+        <article class="card trend-top">
+          <div class="company-head">
+            <div class="company-id">
+              <span id="trendInitial" class="initial"></span>
+              <div>
+                <h3 id="trendName"></h3>
+                <p id="trendMeta" class="meta"></p>
+              </div>
+            </div>
+            <button type="button" id="trendAnalyze" class="link-btn">이 종목 적합도 보기 →</button>
+          </div>
+          <p class="trend-price"><strong id="trendClose"></strong> <span id="trendChange"></span></p>
+
+          <div class="trend-tiles">
+            <div class="trend-tile">
+              <p class="tile-label">주가 온도</p>
+              <p class="tile-value" id="tempLabel"></p>
+              <div class="temp-bar" aria-hidden="true"><span id="tempMarker"></span></div>
+              <div class="temp-scale" aria-hidden="true"><span>침체</span><span>중립</span><span>과열</span></div>
+              <p class="tile-text" id="tempText"></p>
+            </div>
+            <div class="trend-tile">
+              <p class="tile-label">주가 흐름</p>
+              <p class="tile-value" id="trendLabel"></p>
+              <p class="tile-counts" id="trendCounts"></p>
+              <p class="tile-text" id="trendText"></p>
+            </div>
+          </div>
+
+          <div class="beginner-guide beginner-only">
+            <p class="bg-title">이렇게 보세요</p>
+            <ol>
+              <li><strong>주가 온도</strong>는 최근 짧은 기간에 많이 올랐는지(과열), 많이 떨어졌는지(침체)예요.</li>
+              <li><strong>주가 흐름</strong>은 주가가 여러 기간의 평균 가격보다 위에 있는지 아래에 있는지로 본 방향이에요.</li>
+              <li>과열이라고 꼭 떨어지거나, 침체라고 꼭 오르지는 않아요. 회사가 튼튼한지는 <strong>적합도</strong>에서 함께 보세요.</li>
+            </ol>
+          </div>
+          <ul id="trendEasy" class="trend-easy beginner-only"></ul>
+        </article>
+
+        <article class="card trend-chart-card">
+          <div class="mini-head">
+            <h4>주가와 이동평균선</h4>
+            <div class="chips" id="trendRange">
+              <button type="button" data-range="60" aria-pressed="false">3개월</button>
+              <button type="button" data-range="120" aria-pressed="true">6개월</button>
+              <button type="button" data-range="250" aria-pressed="false">1년</button>
+            </div>
+          </div>
+          <div id="trendChart" class="trend-chart"></div>
+          <p class="chart-legend"><span class="lg close">종가</span><span class="lg ma20">20일 평균</span><span class="lg ma60">60일 평균</span></p>
+        </article>
+
+        <div class="trend-grid expert-only">
+          <article class="card">
+            <div class="mini-head"><h4>기술적 지표</h4><span id="indCounts" class="mini-note"></span></div>
+            <table class="trend-table">
+              <thead><tr><th>지표</th><th>값</th><th>신호</th></tr></thead>
+              <tbody id="trendIndicators"></tbody>
+            </table>
+          </article>
+          <article class="card">
+            <div class="mini-head"><h4>이동평균</h4><span id="maCounts" class="mini-note"></span></div>
+            <table class="trend-table">
+              <thead><tr><th>기간</th><th>단순(SMA)</th><th>지수(EMA)</th></tr></thead>
+              <tbody id="trendMas"></tbody>
+            </table>
+          </article>
+        </div>
+
+        <p id="trendFine" class="fine trend-fine"></p>
+      </div>
     </section>
   </main>
 

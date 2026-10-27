@@ -11,7 +11,8 @@ import { getSample } from './src/sampleData.js';
 import { industryName, isFinancial, MARKET } from './src/industry.js';
 import { buildProfile, computeFit, CRITERIA, METRICS, RISK_LEVELS } from './src/scoring.js';
 import { SURVEY, cleanAnswers } from './public/survey.js';
-import { getPriceStats, getMarketCaps } from './src/price.js';
+import { getPriceStats, getPriceHistory, getMarketCaps } from './src/price.js';
+import { analyzeTrend } from './src/technical.js';
 import { getRates } from './src/macro.js';
 import { initPeers, syncPeers, peerStatus, loadPeers, rankAmong, MIN_PEERS } from './src/peers.js';
 import { openDb } from './src/db.js';
@@ -168,6 +169,9 @@ async function getData(stock) {
 }
 
 const publicStock = s => ({ code: s.code, name: s.name });
+const stockNotFound = () => (hasFullList()
+  ? '찾을 수 없는 종목이에요. 상장사 이름이나 6자리 종목코드로 검색해보세요.'
+  : '지금은 DART 키가 없어서 삼성전자, SK하이닉스, 현대자동차만 분석할 수 있어요.');
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml' };
 const json = (res, status, body, headers = {}) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...headers }); res.end(JSON.stringify(body)); };
 
@@ -352,11 +356,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/analyze') {
       await ready;
       const stock = findStock(url.searchParams.get('q'));
-      if (!stock) {
-        return json(res, 404, { error: hasFullList()
-          ? '찾을 수 없는 종목이에요. 상장사 이름이나 6자리 종목코드로 검색해보세요.'
-          : '지금은 DART 키가 없어서 삼성전자, SK하이닉스, 현대자동차만 분석할 수 있어요.' });
-      }
+      if (!stock) return json(res, 404, { error: stockNotFound() });
       const answers = Object.fromEntries(SURVEY.map(q => [q.key, url.searchParams.get(q.key) || undefined]));
       let r;
       try { r = await analyzeStock(stock, answers); }
@@ -378,6 +378,17 @@ const server = http.createServer(async (req, res) => {
         macro,
         sources: { price: sourceState(PRICE_KEY, 'price'), macro: sourceState(ECOS_KEY, 'macro') },
       });
+    }
+
+    // 주가 흐름(기술적 분석): 과열·침체 지표, 이동평균, 그래프 (성향과 무관, 투자 권유 아님)
+    if (url.pathname === '/api/technical') {
+      await ready;
+      const stock = findStock(url.searchParams.get('q'));
+      if (!stock) return json(res, 404, { error: stockNotFound() });
+      if (!PRICE_KEY) return json(res, 503, { error: '주가 흐름은 시세 키(DATA_GO_KR_KEY)가 있어야 볼 수 있어요.' });
+      const rows = await optional('price', () => getPriceHistory(PRICE_KEY, stock.code));
+      if (!rows) return json(res, 502, { error: `주가 데이터를 불러오지 못했어요. (${sourceErrors.price})` });
+      return json(res, 200, { stock: publicStock(stock), ...analyzeTrend(rows), source: '금융위원회 주식시세정보 (공공데이터포털)' });
     }
 
     // 정적 파일
