@@ -323,11 +323,54 @@ body[data-mode="beginner"] .expert-only, body[data-mode="expert"] .beginner-only
 .chat-login { align-self: flex-start; padding: 10px 16px; }
 .chat-fine { margin: 0; padding: 0 12px 10px; font-size: 0.7rem; color: var(--muted); }
 
-/* 주가 흐름 화면 (#trend): body[data-view]로 원래 화면과 바꿔 보여줌 */
-body[data-view="trend"] .view-main, body:not([data-view="trend"]) .view-trend { display: none !important; }
+/* 화면 전환 (views.js): body[data-view]와 같은 이름의 .view-* 요소만 보여줌 */
+body:not([data-view="analysis"]) .view-analysis, body:not([data-view="watch"]) .view-watch,
+body:not([data-view="compare"]) .view-compare, body:not([data-view="trend"]) .view-trend { display: none !important; }
+.page-hero { text-align: center; padding: 56px 0 32px; }
+.page-hero h1 { font-size: clamp(1.7rem, 3.6vw, 2.3rem); letter-spacing: -0.04em; margin: 0 0 10px; }
+
+/* 관심종목 화면: 두 종목 골라 비교 */
+.watch-list label { display: flex; align-items: center; gap: 10px; }
+.watch-list input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--blue); }
+.watch-compare { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 0.85rem; color: var(--muted); }
+.watch-compare .primary { padding: 9px 16px; }
+.watch-compare .primary:disabled { opacity: 0.45; cursor: default; }
+
+/* 종목 비교 화면 (#compare): 종목 A는 파랑, B는 주황 */
+.compare-search input { min-width: 0; }
+.compare-search .vs { align-self: center; color: var(--muted); font-weight: 700; font-size: 0.85rem; padding: 0 4px; }
+.compare-body { display: grid; gap: 20px; }
+.compare-body > * { min-width: 0; }
+.compare-body .notice { margin: 0; }
+.cmp-heads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.cmp-head { border: 1px solid var(--line); border-radius: 12px; padding: 16px; border-top: 4px solid var(--blue); }
+.cmp-head.b { border-top-color: var(--amber); }
+.cmp-name { margin: 0; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+.cmp-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); flex-shrink: 0; }
+.cmp-head.b .cmp-dot { background: var(--amber); }
+.cmp-total { margin: 10px 0 0; }
+.cmp-total strong { font-size: 2rem; letter-spacing: -0.03em; }
+.cmp-total small { margin-left: 4px; color: var(--muted); }
+.cmp-verdict-text { margin: 2px 0 10px; font-size: 0.88rem; }
+.cmp-summary { display: grid; gap: 4px; margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: #fafbff; border: 1px dashed #c9d6f8; font-size: 0.9rem; line-height: 1.55; }
+.cmp-rows { display: grid; }
+.cmp-row { display: grid; grid-template-columns: 130px minmax(0, 1fr) 150px; gap: 6px 16px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+.cmp-row:first-child { border-top: 0; }
+.cmp-label strong { display: block; }
+.cmp-label span { font-size: 0.75rem; color: var(--muted); }
+.cmp-bars { display: grid; gap: 6px; }
+.cmp-bar { display: grid; grid-template-columns: minmax(0, 1fr) 96px; align-items: center; gap: 10px; }
+.cmp-bar i { position: relative; height: 14px; border-radius: 999px; background: #f1f3f7; overflow: hidden; }
+.cmp-bar span { position: absolute; inset: 0 auto 0 0; background: var(--blue); border-radius: 999px; }
+.cmp-bar.b span { background: var(--amber); }
+.cmp-bar em { font-style: normal; font-size: 0.8rem; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.cmp-bar.none em { color: var(--muted); font-weight: 500; }
+.cmp-result { margin: 0; font-size: 0.85rem; font-weight: 700; }
+.cmp-result.a { color: var(--blue); } .cmp-result.b { color: var(--amber); } .cmp-result.same, .cmp-result.none { color: var(--muted); }
+.cmp-detail { grid-column: 1 / -1; }
+.cmp-detail summary { cursor: pointer; font-size: 0.8rem; color: var(--blue); }
+.cmp-detail td small { color: var(--muted); margin-left: 4px; }
 .trend-link { display: inline-block; margin-top: 4px; font-size: 0.8rem; }
-.trend-hero { text-align: center; padding: 56px 0 32px; }
-.trend-hero h1 { font-size: clamp(1.7rem, 3.6vw, 2.3rem); letter-spacing: -0.04em; margin: 0 0 10px; }
 .trend-body { display: grid; gap: 20px; }
 .trend-body > * { min-width: 0; } /* 그래프가 화면 폭에 맞춰 줄어들도록 */
 .trend-top .company-head { flex-wrap: wrap; }
@@ -379,9 +422,12 @@ body[data-view="trend"] .view-main, body:not([data-view="trend"]) .view-trend { 
 }
 @media (max-width: 620px) {
   .nav-inner { flex-wrap: wrap; row-gap: 10px; }
-  .menu { order: 3; flex-basis: 100%; gap: 20px; }
-  .trend-tiles, .trend-grid { grid-template-columns: 1fr; }
-  .trend-hero { padding: 36px 0 24px; }
+  .menu { order: 3; flex-basis: 100%; gap: 16px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+  .menu > * { flex-shrink: 0; }
+  .trend-tiles, .trend-grid, .cmp-heads { grid-template-columns: 1fr; }
+  .page-hero { padding: 36px 0 24px; }
+  .compare-search .vs { padding: 0; }
+  .cmp-row { grid-template-columns: minmax(0, 1fr); }
   .nav-inner { justify-content: space-between; }
   .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .indicators { grid-template-columns: 1fr; }

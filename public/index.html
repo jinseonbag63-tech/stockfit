@@ -8,13 +8,14 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body>
+<body data-view="analysis">
   <header class="nav">
     <div class="nav-inner">
       <a href="/" class="logo"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i></span>StockFit</a>
       <nav class="menu" aria-label="주요 메뉴">
         <a href="#analysis" class="active">종목 분석</a>
         <a href="#watch">관심종목</a>
+        <a href="#compare">종목 비교</a>
         <a href="#trend">주가 흐름</a>
         <button type="button" id="navProfile">내 투자성향</button>
       </nav>
@@ -42,7 +43,7 @@
       </div>
     </div>
 
-    <section class="hero view-main">
+    <section class="hero view-analysis">
       <p class="eyebrow">복잡한 주식, 쉬운 시작</p>
       <h1>이 회사, 나와 잘 맞을까요?</h1>
       <p class="hero-sub">종목만 검색하세요. 어려운 정보는 쉽게 풀어드릴게요.</p>
@@ -59,7 +60,7 @@
       </div>
     </section>
 
-    <section id="analysis" class="wrap view-main">
+    <section id="analysis" class="wrap view-analysis">
       <div class="section-head">
         <div>
           <p class="section-eyebrow">한눈에 보는 종목</p>
@@ -167,16 +168,20 @@
       </div>
     </section>
 
-    <section id="watch" class="wrap watch view-main">
-      <div class="section-head">
-        <div>
-          <p class="section-eyebrow">관심종목</p>
-          <h2>내 성향과 얼마나 맞을까요?</h2>
-        </div>
+    <!-- 관심종목 화면 (#watch): ☆ 추가는 종목 분석 화면에서 -->
+    <section id="watch" class="wrap watch view-watch" aria-labelledby="watchTitle">
+      <div class="page-hero">
+        <p class="eyebrow">관심종목</p>
+        <h1 id="watchTitle">내 관심종목, 내 성향과 얼마나 맞을까요?</h1>
+        <p class="hero-sub">종목 분석 화면에서 ☆ 관심종목을 누르면 여기에 모여요.</p>
       </div>
       <div class="card">
         <p id="watchSummary" class="watch-summary"></p>
         <ul id="watchList" class="watch-list"></ul>
+        <div id="watchCompareBar" class="watch-compare" hidden>
+          <span id="watchCompareNote">두 종목을 고르면 나란히 비교할 수 있어요.</span>
+          <button type="button" id="watchCompareBtn" class="primary" disabled>선택한 두 종목 비교하기</button>
+        </div>
       </div>
 
       <div id="watchFeedCard" class="card feed-card" hidden>
@@ -195,7 +200,7 @@
       </div>
     </section>
 
-    <section class="wrap view-main">
+    <section class="wrap view-analysis">
       <details class="how card">
         <summary>적합도는 어떻게 계산하나요?</summary>
         <div class="beginner-only">
@@ -214,9 +219,47 @@
         <p class="fine">투자 권유가 아닌 정보 제공 목적의 분석이에요. 투자성향은 투자자정보확인서 항목을 참고한 자체 설문으로 정한 것이고, 증권사의 공식 투자성향 진단을 대신하지 않아요. 원금 손실을 원하지 않는다고 답하면 다른 답과 상관없이 안정형으로 봐요.</p>
       </details>
     </section>
+    <!-- 종목 비교 화면 (#compare): 동작은 compare.js -->
+    <section id="compare" class="wrap view-compare" aria-labelledby="compareTitle">
+      <div class="page-hero">
+        <p class="eyebrow">종목 비교</p>
+        <h1 id="compareTitle">두 종목, 어떤 점이 더 나을까요?</h1>
+        <p class="hero-sub">내 투자성향 기준으로 여섯 가지 기준을 나란히 비교해요.</p>
+        <form id="compareForm" class="search compare-search" autocomplete="off">
+          <label for="compareA" class="sr-only">첫 번째 종목</label>
+          <input id="compareA" list="stockList" placeholder="첫 번째 종목" required />
+          <span class="vs" aria-hidden="true">vs</span>
+          <label for="compareB" class="sr-only">두 번째 종목</label>
+          <input id="compareB" list="stockList" placeholder="두 번째 종목" required />
+          <button type="submit">비교하기</button>
+        </form>
+        <div id="compareWatch" class="picks" hidden>
+          <p class="picks-title">관심종목에서 고르기</p>
+          <div id="compareWatchChips" class="pick-chips"></div>
+        </div>
+      </div>
+
+      <p id="compareError" class="error" role="alert" hidden></p>
+      <div id="compareEmpty" class="empty">비교할 종목 두 개를 검색하세요.</div>
+
+      <div id="compareResult" class="compare-body" hidden>
+        <p id="compareNotice" class="notice" hidden></p>
+        <article class="card">
+          <p id="compareProfile" class="fit-sub"></p>
+          <div id="compareHeads" class="cmp-heads"></div>
+          <p id="compareSummary" class="cmp-summary beginner-only"></p>
+        </article>
+        <article class="card">
+          <div class="mini-head"><h4>기준별 비교</h4><span>0~100점 · 막대가 길수록 좋아요</span></div>
+          <div id="compareRows" class="cmp-rows"></div>
+        </article>
+        <p class="fine">종목 분석 화면과 같은 방법으로 계산한 점수예요. 점수 차이가 5점보다 작으면 "비슷해요"로 보여줘요. 투자 권유가 아닌 정보 제공 목적이에요.</p>
+      </div>
+    </section>
+
     <!-- 주가 흐름 화면 (#trend): 메뉴에서 열면 위 화면 대신 보여요. 동작은 technical.js -->
     <section id="trend" class="wrap trend view-trend" aria-labelledby="trendTitle">
-      <div class="trend-hero">
+      <div class="page-hero">
         <p class="eyebrow">주가 흐름</p>
         <h1 id="trendTitle">지금 주가, 과열일까 침체일까?</h1>
         <p class="hero-sub">최근 주가 움직임으로 계산한 지표를 쉽게 풀어드려요.</p>

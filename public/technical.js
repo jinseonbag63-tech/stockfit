@@ -1,6 +1,7 @@
 // 주가 흐름 화면 (#trend): 주가 온도(과열·침체), 주가 흐름(상승·하락), 그래프, 지표 표
 // 계산은 서버(src/technical.js)가 하고, 여기서는 그리기만 해요.
 // app.js가 initTrend({ $, esc, show, api, onAnalyze })로 필요한 도구를 넘겨줘요.
+import { onShowView, goTo } from './views.js';
 
 let $, esc, show, api, onAnalyze;
 let data = null;   // 마지막으로 불러온 결과
@@ -13,22 +14,9 @@ const num = v => (v == null ? '-' : v.toLocaleString(undefined, { maximumFractio
 const day = d => `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6, 8)}`;
 const badge = s => (s ? `<span class="sig ${s}">${SIGNAL[s]}</span>` : '<span class="sig none">-</span>');
 
-// 화면 전환: 주소가 #trend면 주가 흐름 화면, 아니면 원래 화면
-function syncView() {
-  const trend = location.hash === '#trend';
-  document.body.dataset.view = trend ? 'trend' : 'main';
-  const active = trend ? '#trend' : location.hash === '#watch' ? '#watch' : '#analysis';
-  document.querySelectorAll('.menu a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === active));
-  if (trend) { window.scrollTo(0, 0); if (data) drawChart(); return; }
-  // 숨겨져 있던 화면이라 브라우저가 스크롤하지 못했을 수 있어서 직접 이동
-  const target = location.hash && document.getElementById(location.hash.slice(1));
-  if (target) requestAnimationFrame(() => target.scrollIntoView({ block: 'start' }));
-}
-
 export function initTrend(deps) {
   ({ $, esc, show, api, onAnalyze } = deps);
-  window.addEventListener('hashchange', syncView);
-  syncView();
+  onShowView('trend', () => data && drawChart()); // 숨겨져 있던 동안은 폭을 몰라서 보일 때 다시 그림
   $('trendForm').addEventListener('submit', e => { e.preventDefault(); load($('trendQ').value); });
   $('trendAnalyze').addEventListener('click', () => data && onAnalyze(data.stock.code, data.stock.name));
   $('trendRange').addEventListener('click', e => {
@@ -45,7 +33,7 @@ export function initTrend(deps) {
 // 종목 분석 화면의 "이 종목 주가 흐름 보기"에서 열 때
 export function openTrend(code, name) {
   $('trendQ').value = name;
-  location.hash = '#trend';
+  goTo('trend');
   load(code);
 }
 
