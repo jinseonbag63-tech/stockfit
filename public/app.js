@@ -3,6 +3,7 @@ import { SURVEY, riskFromAnswers } from './survey.js';
 import { initViews, goTo } from './views.js';
 import { initTrend, openTrend } from './technical.js';
 import { initCompare, openCompare, refreshCompare } from './compare.js';
+import { initWatch, refreshWatch, watchStocks } from './watch.js';
 
 const $ = id => document.getElementById(id);
 
@@ -196,46 +197,19 @@ function updateWatchBtn() {
   $('watchBtn').textContent = on ? '★ 관심종목' : '☆ 관심종목';
 }
 
-let watchStocks = []; // 불러온 관심종목 [{ code, name }] (종목 비교 화면의 "관심종목에서 고르기")
-async function renderWatch() {
+// 관심종목 화면(표·정렬·진단·비교 선택)은 watch.js가 그림. 여기서는 소식과 함께 다시 불러오기만
+function renderWatch() {
   loadWatchFeed();
-  if (!watchlist.length) {
-    watchStocks = [];
-    $('watchSummary').textContent = '종목 분석 화면에서 ☆ 관심종목을 누르면, 내 성향과 얼마나 맞는지 한 번에 비교해볼 수 있어요.';
-    $('watchList').innerHTML = '';
-    updateWatchCompare();
-    return;
-  }
-  const results = await Promise.all(watchlist.map(code => analyze(code).catch(() => null)));
-  const ok = results.filter(Boolean);
-  watchStocks = ok.map(r => ({ code: r.stock.code, name: r.stock.name }));
-  if (!ok.length) { $('watchSummary').textContent = '관심종목을 불러오지 못했어요.'; updateWatchCompare(); return; }
-  const avg = Math.round(ok.reduce((a, r) => a + r.fit.total, 0) / ok.length);
-  const low = ok.filter(r => r.fit.total < 50).map(r => r.stock.name);
-  $('watchSummary').innerHTML = `관심종목 평균 적합도 <strong>${avg}점</strong>.`
-    + (low.length ? ` ${low.join(', ')}은(는) 내 기준과 잘 맞지 않아서 평균을 낮추고 있어요.` : ' 모두 내 기준과 어느 정도 맞아요.');
-  $('watchList').innerHTML = ok.map(r => `
-    <li>
-      <label><input type="checkbox" data-pick="${esc(r.stock.code)}" aria-label="${esc(r.stock.name)} 비교에 넣기" />
-        <button type="button" data-code="${esc(r.stock.code)}" data-name="${esc(r.stock.name)}">${esc(r.stock.name)}</button></label>
-      <span class="watch-score ${r.fit.total < 50 ? 'low' : ''}">${r.fit.total}점</span>
-    </li>`).join('');
-  updateWatchCompare();
+  refreshWatch();
+}
+// watch.js에서 삭제·순서 바꾸기를 하면 목록 저장
+function setWatchlist(list) {
+  watchlist = list;
+  saveWatch();
+  updateWatchBtn();
+  loadWatchFeed();
 }
 
-// 관심종목 두 개를 고르면 "선택한 두 종목 비교하기"
-const pickedWatch = () => [...$('watchList').querySelectorAll('[data-pick]:checked')].map(c => c.dataset.pick);
-function updateWatchCompare() {
-  $('watchCompareBar').hidden = watchStocks.length < 2;
-  const n = pickedWatch().length;
-  $('watchCompareBtn').disabled = n !== 2;
-  $('watchCompareNote').textContent = n === 2 ? '두 종목을 골랐어요.' : n > 2 ? '두 종목만 골라주세요.' : '두 종목을 고르면 나란히 비교할 수 있어요.';
-}
-$('watchList').addEventListener('change', updateWatchCompare);
-$('watchCompareBtn').addEventListener('click', () => {
-  const [a, b] = pickedWatch().map(code => watchStocks.find(s => s.code === code));
-  if (a && b) openCompare(a, b);
-});
 // 종목 이름을 누르면 종목 분석 화면에서 분석
 function openAnalysis(code, name) {
   goTo('analysis');
@@ -251,7 +225,6 @@ $('watchBtn').addEventListener('click', () => {
   updateWatchBtn();
   renderWatch();
 });
-$('watchList').addEventListener('click', e => { const b = e.target.closest('[data-code]'); if (b) openAnalysis(b.dataset.code, b.dataset.name); });
 
 // 뉴스·공시 (종목 화면 카드 + 관심종목 소식)
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -736,9 +709,10 @@ function renderDataStatus(s) {
     `<li><span class="ds-state ${state}">${LABEL[state]}</span><strong>${name}</strong><span class="ds-text">${esc(text)}</span></li>`).join('');
 }
 
-// 화면 4개: 종목 분석, 관심종목(app.js), 종목 비교(compare.js), 주가 흐름(technical.js)
+// 화면 4개: 종목 분석(app.js), 관심종목(watch.js), 종목 비교(compare.js), 주가 흐름(technical.js)
 initTrend({ $, esc, show, api, onAnalyze: openAnalysis });
-initCompare({ $, esc, show, api, getProfile: () => profile, getWatchStocks: () => watchStocks, onAnalyze: openAnalysis });
+initCompare({ $, esc, show, api, getProfile: () => profile, getWatchStocks: watchStocks, onAnalyze: openAnalysis });
+initWatch({ $, esc, api, store, analyze, getProfile: () => profile, getWatchlist: () => watchlist, setWatchlist, onAnalyze: openAnalysis, onCompare: openCompare });
 initViews();
 
 // 시작

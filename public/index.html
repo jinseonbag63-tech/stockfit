@@ -175,9 +175,30 @@
         <h1 id="watchTitle">내 관심종목, 내 성향과 얼마나 맞을까요?</h1>
         <p class="hero-sub">종목 분석 화면에서 ☆ 관심종목을 누르면 여기에 모여요.</p>
       </div>
-      <div class="card">
-        <p id="watchSummary" class="watch-summary"></p>
-        <ul id="watchList" class="watch-list"></ul>
+      <div id="watchDiag" class="card watch-diag" hidden>
+        <div class="mini-head"><h4>관심종목 구성 진단</h4><span>관심종목 전체를 보고 알려드려요 · 참고용</span></div>
+        <ul id="watchDiagList" class="diag-list"></ul>
+      </div>
+      <div class="card watch-card">
+        <div class="watch-top">
+          <p id="watchSummary" class="watch-summary"></p>
+          <label id="watchSortBox" class="watch-sort" hidden>정렬
+            <select id="watchSort">
+              <option value="mine">내가 정한 순서</option>
+              <option value="high">적합도 높은 순</option>
+              <option value="low">적합도 낮은 순</option>
+              <option value="name">이름순</option>
+            </select>
+          </label>
+        </div>
+        <div id="watchTable" class="wtable" hidden>
+          <div class="wrow whead" aria-hidden="true">
+            <span>종목</span><span>적합도</span>
+            <span><span class="beginner-only">강점·약점</span><span class="expert-only">기준별 점수</span></span>
+            <span>주가 온도</span><span>전일 대비</span><span></span>
+          </div>
+          <ul id="watchList" class="watch-list"></ul>
+        </div>
         <div id="watchCompareBar" class="watch-compare" hidden>
           <span id="watchCompareNote">두 종목을 고르면 나란히 비교할 수 있어요.</span>
           <button type="button" id="watchCompareBtn" class="primary" disabled>선택한 두 종목 비교하기</button>
