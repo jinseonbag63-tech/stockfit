@@ -33,6 +33,10 @@ export function unzipFirstFile(buf) {
   throw new Error(`지원하지 않는 압축 방식(${method})`);
 }
 
+// XML 글자 표기(&amp; 등)를 원래 글자로 (예: 삼성E&amp;A → 삼성E&A)
+const XML_CHARS = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const unxml = s => s.replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => XML_CHARS[e]);
+
 // XML에서 상장사(종목코드가 있는 회사)만 골라냄
 export function parseCorpXml(xml) {
   const tag = (block, name) => (block.match(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`)) || [])[1]?.trim() || '';
@@ -40,7 +44,7 @@ export function parseCorpXml(xml) {
   for (const m of xml.matchAll(/<list>([\s\S]*?)<\/list>/g)) {
     const code = tag(m[1], 'stock_code');
     if (!/^\w{6}$/.test(code)) continue; // 비상장 회사는 종목코드가 비어 있음
-    list.push({ code, corpCode: tag(m[1], 'corp_code'), name: tag(m[1], 'corp_name'), engName: tag(m[1], 'corp_eng_name') });
+    list.push({ code, corpCode: tag(m[1], 'corp_code'), name: unxml(tag(m[1], 'corp_name')), engName: unxml(tag(m[1], 'corp_eng_name')) });
   }
   return list;
 }
@@ -63,7 +67,8 @@ export async function loadCompanies(key, dataDir) {
     if (fs.existsSync(file)) {
       const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
       if (Date.now() - saved.savedAt < MAX_AGE && saved.list?.length) {
-        companies = saved.list; isFull = true;
+        // 예전에 저장한 목록에는 &amp; 같은 표기가 남아 있을 수 있어서 함께 풀어줌
+        companies = saved.list.map(c => ({ ...c, name: unxml(c.name), engName: unxml(c.engName || '') })); isFull = true;
         return { count: companies.length, full: true, from: '저장된 파일' };
       }
     }

@@ -6,6 +6,7 @@ import { initCompare, openCompare, refreshCompare, renderWatchChips as compareWa
 import { initWatch, refreshWatch, watchStocks } from './watch.js';
 import { initPlanner, refreshPlanner, renderWatchChips as plannerWatchChips } from './planner.js';
 import { initSectors } from './sectors.js';
+import { initClues } from './clues.js';
 
 const $ = id => document.getElementById(id);
 
@@ -723,6 +724,7 @@ initCompare({ $, esc, show, api, getProfile: () => profile, getWatchStocks: watc
 initWatch({ $, esc, api, store, analyze, getProfile: () => profile, getWatchlist: () => watchlist, setWatchlist, onAnalyze: openAnalysis, onCompare: openCompare });
 initPlanner({ $, esc, show, api, store, getProfile: () => profile, getWatchStocks: watchStocks });
 initSectors({ $, esc, api, openTrend });
+initClues({ $, esc, api });
 $('plannerLink').addEventListener('click', () => goTo('planner'));
 initViews();
 

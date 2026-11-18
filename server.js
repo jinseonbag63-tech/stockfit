@@ -14,7 +14,8 @@ import { SURVEY, cleanAnswers } from './public/survey.js';
 import { getPriceStats, getPriceHistory, getMarketCaps } from './src/price.js';
 import { analyzeTrend } from './src/technical.js';
 import { buildPlan, METHODS, LOSS_LIMIT } from './src/planner.js';
-import { initSectors, syncSectors, getSectors, sectorStatus } from './src/sectors.js';
+import { initSectors, syncSectors, getSectors, sectorStatus, sectorSeriesFor } from './src/sectors.js';
+import { buildClues } from './src/clues.js';
 import { getRates } from './src/macro.js';
 import { initPeers, syncPeers, peerStatus, loadPeers, rankAmong, MIN_PEERS } from './src/peers.js';
 import { openDb } from './src/db.js';
@@ -25,7 +26,7 @@ import { askAssistant, buildContext, DEFAULT_MODEL } from './src/chat.js';
 import { initAuth, signup, login, createSession, userFromToken, endSession, updateUserData, publicUser,
          findUser, issueEmailToken, verifyEmail, resetPassword, SESSION_COOKIE, SESSION_MAX_AGE } from './src/auth.js';
 import { sendMail, mailConfigured, verifyMail, resetMail } from './src/mail.js';
-import { getFeed, newsError, newsApiName } from './src/feed.js';
+import { getFeed, newsError, newsApiName, stockDisclosures, stockNews, analystNews } from './src/feed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -420,6 +421,24 @@ const server = http.createServer(async (req, res) => {
       if (!PRICE_KEY) return json(res, 503, { error: '업종별 상태는 시세 키(DATA_GO_KR_KEY)가 있어야 볼 수 있어요.' });
       await ready;
       return json(res, 200, { ...(await getSectors(PRICE_KEY)), status: sectorStatus() });
+    }
+
+    // 상승·하락 단서: 시장·업종 대비 비교, 크게 움직인 날, 같은 시기 공시·뉴스, 증권가 시각 (원인을 단정하지 않음)
+    if (url.pathname === '/api/clues') {
+      await ready;
+      const stock = findStock(url.searchParams.get('q'));
+      if (!stock) return json(res, 404, { error: stockNotFound() });
+      if (!PRICE_KEY) return json(res, 503, { error: '상승·하락 단서는 시세 키(DATA_GO_KR_KEY)가 있어야 볼 수 있어요.' });
+      const rows = await optional('price', () => getPriceHistory(PRICE_KEY, stock.code));
+      if (!rows) return json(res, 502, { error: `주가 데이터를 불러오지 못했어요. (${sourceErrors.price})` });
+      // 공시·뉴스는 일부가 실패해도 나머지 단서는 보여줌
+      const [series, disclosures, news, analyst] = (await Promise.allSettled([
+        sectorSeriesFor(stock.code), stockDisclosures(DART_KEY, stock), stockNews(NAVER, stock), analystNews(NAVER, stock),
+      ])).map(r => (r.status === 'fulfilled' ? r.value : null));
+      return json(res, 200, {
+        stock: publicStock(stock), ...buildClues(rows, series, { disclosures: disclosures ?? [], news: news ?? [], analyst: analyst ?? [] }),
+        newsEnabled: Boolean(NAVER.id && NAVER.secret), disclosuresEnabled: Boolean(DART_KEY),
+      });
     }
 
     // 주가 흐름(기술적 분석): 과열·침체 지표, 이동평균, 그래프 (성향과 무관, 투자 권유 아님)

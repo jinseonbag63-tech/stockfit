@@ -2,6 +2,7 @@
 // 계산은 서버(src/technical.js)가 하고, 여기서는 그리기만 해요.
 // app.js가 initTrend({ $, esc, show, api, onAnalyze })로 필요한 도구를 넘겨줘요.
 import { onShowView, goTo } from './views.js';
+import { loadClues } from './clues.js';
 
 let $, esc, show, api, onAnalyze;
 let data = null;   // 마지막으로 불러온 결과
@@ -59,6 +60,7 @@ async function load(query) {
 
 function render(d) {
   data = d;
+  loadClues(d.stock.code); // 왜 움직였을까? 카드는 따로 불러옴 (공시·뉴스까지 모아서 조금 느림)
   $('trendEmpty').hidden = true;
   $('trendResult').hidden = false;
   $('trendInitial').textContent = d.stock.name.charAt(0);

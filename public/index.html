@@ -449,6 +449,31 @@
           <ul id="trendEasy" class="trend-easy beginner-only"></ul>
         </article>
 
+        <!-- 상승·하락 단서 (clues.js): 원인을 단정하지 않고 단서만 -->
+        <article class="card clue-card">
+          <div class="mini-head"><h4>왜 움직였을까?</h4><span>원인을 단정하지 않고 확인할 단서만 모았어요</span></div>
+          <p id="clueStatus" class="plan-note"></p>
+          <div id="clueBody" hidden>
+            <div class="table-scroll">
+              <table class="trend-table clue-compare">
+                <thead><tr><th>기간</th><th>이 종목</th><th id="clueSectorHead">같은 업종</th><th>시장 전체</th><th>어디서 온 움직임일까</th></tr></thead>
+                <tbody id="clueCompare"></tbody>
+              </table>
+            </div>
+            <h5 class="clue-sub">크게 움직인 날 <span id="clueDaysNote"></span></h5>
+            <ul id="clueDays" class="clue-days"></ul>
+            <div class="clue-grid">
+              <div><h5 class="clue-sub">최근 1개월 공시</h5><ul id="clueDisc" class="clue-list"></ul></div>
+              <div><h5 class="clue-sub">최근 뉴스 <span id="clueNewsNote"></span></h5><ul id="clueNews" class="clue-list"></ul></div>
+            </div>
+            <h5 class="clue-sub">증권가 시각 <span>최근 30일 증권사 의견 기사</span></h5>
+            <p id="clueAnalystCount" class="clue-analyst"></p>
+            <ul id="clueAnalyst" class="clue-list"></ul>
+            <p class="fine">시장·업종 비교는 자체 계산 지수 기준이에요. 공시·뉴스는 같은 시기에 있었던 일일 뿐, 주가가 움직인 원인이라고 단정할 수 없어요.
+              뉴스는 날짜를 정해 검색할 수 없어 최근 기사까지만 보여줘요. 증권가 시각은 기사 제목의 단어로 나눈 것이라 정확하지 않을 수 있고, 내용은 원문에서 확인해 주세요.</p>
+          </div>
+        </article>
+
         <article class="card trend-chart-card">
           <div class="mini-head">
             <h4>주가와 이동평균선</h4>

@@ -89,6 +89,16 @@ export async function syncSectors(key) {
   }
 }
 
+// 한 종목의 업종 코드와, 그 업종·시장 전체의 날짜별 하루 등락 (상승·하락 단서에서 비교용)
+export async function sectorSeriesFor(stockCode) {
+  if (!db) return null;
+  const row = await db.get('SELECT industry_code FROM company_info WHERE stock_code = ?', [stockCode]);
+  const sector = row?.industry_code ? String(row.industry_code).slice(0, 2) : null;
+  const read = async key => (await db.all('SELECT date, ret FROM sector_daily WHERE sector = ? ORDER BY date', [key]))
+    .map(r => ({ date: r.date, ret: Number(r.ret) }));
+  return { sector, sectorName: sector ? industryName(sector) : null, sectorDays: sector ? await read(sector) : [], marketDays: await read('ALL') };
+}
+
 // 업종별 온도·흐름·등락, 순위 TOP 5, 시장 전체. 대표 종목은 최근 시가총액 순 3개
 export async function getSectors(key) {
   if (summary && Date.now() - summary.at < 60 * 60 * 1000) return summary.data;

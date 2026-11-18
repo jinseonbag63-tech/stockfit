@@ -116,11 +116,12 @@ const NAVER_APIS = {
 };
 let naverApi = null; // 한 번 성공한 쪽 ('hub' | 'legacy')
 
-async function callNaver(kind, { id, secret }, stock) {
+// query 기본값: 종목 이름이 정확히 들어간 기사만 (따옴표)
+async function callNaver(kind, { id, secret }, stock, { query = `"${stock.name}"`, display = NEWS_PER_STOCK } = {}) {
   const api = NAVER_APIS[kind];
   const url = new URL(api.url);
-  url.searchParams.set('query', `"${stock.name}"`); // 따옴표: 이름이 정확히 들어간 기사만
-  url.searchParams.set('display', String(NEWS_PER_STOCK));
+  url.searchParams.set('query', query);
+  url.searchParams.set('display', String(display));
   url.searchParams.set('sort', 'date');
   if (kind === 'hub') url.searchParams.set('format', 'json');
   const res = await fetch(url, { headers: { [api.idHeader]: id, [api.secretHeader]: secret } })
@@ -133,19 +134,19 @@ async function callNaver(kind, { id, secret }, stock) {
   return data;
 }
 
-async function fetchNews(keys, stock) {
+async function fetchNews(keys, stock, opts) {
   let data;
   try {
     if (naverApi) {
-      data = await callNaver(naverApi, keys, stock);
+      data = await callNaver(naverApi, keys, stock, opts);
     } else {
       try {
-        data = await callNaver('hub', keys, stock);
+        data = await callNaver('hub', keys, stock, opts);
         naverApi = 'hub';
       } catch (err) {
         if (err.status !== 401) throw err;
         try {
-          data = await callNaver('legacy', keys, stock);
+          data = await callNaver('legacy', keys, stock, opts);
           naverApi = 'legacy';
         } catch (err2) {
           throw new Error(`${err.message} / ${err2.message}`);
@@ -166,6 +167,20 @@ async function fetchNews(keys, stock) {
       date: new Date(it.pubDate).toISOString(),
       source: publisher(it.link), url: it.link,
     }));
+}
+
+// 상승·하락 단서용 (clues.js): 한 종목의 최근 공시, 최근 뉴스 더 많이, 증권사 의견 기사 (모두 15분 저장)
+export function stockDisclosures(dartKey, stock) {
+  return dartKey && stock.corpCode ? cached(`disc:${stock.code}`, () => fetchDisclosures(dartKey, stock)) : Promise.resolve([]);
+}
+export function stockNews(naver, stock) {
+  return naver?.id && naver?.secret ? cached(`news30:${stock.code}`, () => fetchNews(naver, stock, { display: 30 })) : Promise.resolve([]);
+}
+// 증권사 목표주가·투자의견 기사 (제목·언론사·날짜·링크만 씀, 본문은 가져오지 않음)
+export function analystNews(naver, stock) {
+  return naver?.id && naver?.secret
+    ? cached(`analyst:${stock.code}`, () => fetchNews(naver, stock, { query: `"${stock.name}" 목표주가`, display: 30 }))
+    : Promise.resolve([]);
 }
 
 // 여러 종목의 소식을 모아 최신순으로. 일부 종목이 실패해도 나머지는 보여줌
