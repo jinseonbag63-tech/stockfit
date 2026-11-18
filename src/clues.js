@@ -88,7 +88,7 @@ export function buildClues(rawRows, series, { disclosures = [], news = [], analy
 
   return {
     asOf, sector: series?.sector ? { code: series.sector, name: series.sectorName } : null,
-    hasSector, hasMarket, compare, bigLimit: round(limit), bigDays,
+    hasSector, hasMarket, compare, bigLimit: round(limit), usualMove: round(usual, 2), bigDays,
     disclosures: recentDisc,
     news: { items: newsSorted.slice(0, 8), oldest: newsSorted.length ? newsSorted[newsSorted.length - 1].date : null },
     analyst: {

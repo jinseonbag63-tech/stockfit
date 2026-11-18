@@ -135,7 +135,7 @@ function row(r, mine, i, n) {
     const s = parts[k]?.score;
     const level = s == null ? 'none' : s >= 60 ? 'good' : s >= 40 ? 'mid' : 'bad';
     return `<span class="mini ${level}" title="${esc(parts[k]?.label ?? k)} ${s == null ? '정보 없음' : `${Math.round(s)}점`}">
-      <i><b style="height:${s == null ? 0 : Math.max(6, Math.round(s))}%"></b></i><small>${SHORT[k]}</small></span>`;
+      <em>${s == null ? '-' : Math.round(s)}</em><i><b style="height:${s == null ? 0 : Math.max(6, Math.round(s))}%"></b></i><small>${SHORT[k]}</small></span>`;
   }).join('');
 
   const t = trends[r.code];
@@ -152,12 +152,20 @@ function row(r, mine, i, n) {
         <span><button type="button" class="w-link" data-code="${code}" data-name="${name}">${name}</button>
         <span class="meta">${esc([d.stock.code, d.stock.sector].filter(Boolean).join(' · '))}</span></span>
       </span>
-      <span class="w-fit ${d.fit.total < 50 ? 'low' : ''}" data-label="적합도">${d.fit.total}점</span>
+      <span class="w-fit ${d.fit.total < 50 ? 'low' : ''}" data-label="적합도">${d.fit.total}점${riskMeta(d)}</span>
       <span class="w-crit"><span class="beginner-only w-easy">${esc(easy)}</span><span class="expert-only minis">${bars}</span></span>
       <span class="w-temp" data-label="주가 온도">${temp}</span>
       <span class="w-chg" data-label="전일 대비">${change}</span>
       ${actions}
     </li>`;
+}
+
+// 전문가 모드: 적합도 아래에 주가 변동성(연)과 위험 등급
+function riskMeta(d) {
+  const vol = d.indicators.find(i => i.key === 'volatility')?.value;
+  const risk = d.fit.risk;
+  const parts = [vol && vol !== '정보 없음' ? `변동성 ${vol}` : null, risk ? `위험 ${risk.grade}등급` : null].filter(Boolean);
+  return parts.length ? `<span class="expert-only w-risk">${esc(parts.join(' · '))}</span>` : '';
 }
 
 // 관심종목 구성 진단: 관심종목 전체를 보고 쉬운 말로 (정보 제공용)

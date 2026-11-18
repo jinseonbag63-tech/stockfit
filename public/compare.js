@@ -112,7 +112,8 @@ function render(a, b) {
   };
   const detail = key => {
     const items = (partsA[key] ?? partsB[key])?.items ?? [];
-    return `<details class="cmp-detail expert-only"><summary>지표별로 보기</summary>
+    // 전문가 모드에서만 보이고 처음부터 펼쳐 둠
+    return `<details class="cmp-detail expert-only" open><summary>지표별로 보기</summary>
       <table class="trend-table"><thead><tr><th>지표</th><th>${esc(a.stock.name)}</th><th>${esc(b.stock.name)}</th></tr></thead><tbody>
       ${items.map(it => `<tr><td>${esc(it.label)}</td>
         <td class="num">${esc(indA[it.key]?.value ?? '-')}${itemScore(partsA[key], it.key)}</td>
@@ -124,11 +125,15 @@ function render(a, b) {
     const label = (partsA[key] ?? partsB[key])?.label ?? key;
     const r = result(key);
     const w = profile.weights[key];
+    const about = (partsA[key] ?? partsB[key])?.about;
+    const sa = partsA[key]?.score, sb = partsB[key]?.score;
+    const gap = sa == null || sb == null ? '' : ` <span class="expert-only cmp-gap">(${Math.abs(Math.round(sa) - Math.round(sb))}점 차이)</span>`;
     return `
     <div class="cmp-row">
-      <div class="cmp-label"><strong>${esc(label)}</strong><span>내 비중 ${Math.round(w * 100)}%</span></div>
+      <div class="cmp-label"><strong>${esc(label)}</strong><span>내 비중 ${Math.round(w * 100)}%</span>
+        ${about ? `<span class="beginner-only cmp-about">${esc(about)}</span>` : ''}</div>
       <div class="cmp-bars">${bar(a, partsA[key], 'a', key)}${bar(b, partsB[key], 'b', key)}</div>
-      <p class="cmp-result ${r.who ?? 'none'}">${esc(r.text)}</p>
+      <p class="cmp-result ${r.who ?? 'none'}">${esc(r.text)}${gap}</p>
       ${detail(key)}
     </div>`;
   }).join('');

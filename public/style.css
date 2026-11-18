@@ -547,6 +547,23 @@ body:not([data-view="planner"]) .view-planner { display: none !important; }
 .plan-contrib .bar.neg b { background: var(--blue); }
 .plan-contrib em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; }
 
+/* 초보자/전문가 모드 보강: 결론 한 줄(초보자), 숫자·근거(전문가) */
+.plan-verdict { margin: 4px 0 12px; padding: 12px 16px; border-radius: 12px; background: #f8f9fc; font-size: 1rem; font-weight: 700; line-height: 1.55; }
+.plan-verdict.ok { background: #e9f6ef; color: #1f7a52; } .plan-verdict.over { background: #fdf3e2; color: #8a5a0c; }
+.plan-verdict strong { font-weight: 800; }
+.plan-corr { margin-top: 14px; }
+.corr-table td.corr.hi { background: #fbeeea; color: var(--red); font-weight: 700; }
+.corr-table td.corr.lo { background: var(--blue-soft); color: var(--blue); }
+.corr-table th { white-space: nowrap; }
+.plan-corr-list { margin: 8px 0 0; padding-left: 18px; font-size: 0.86rem; display: grid; gap: 3px; }
+.w-risk { display: block; font-size: 0.7rem; font-weight: 500; color: var(--muted); margin-top: 2px; white-space: nowrap; }
+.mini em { font-style: normal; font-size: 0.62rem; font-weight: 700; color: var(--ink); line-height: 1; }
+.cmp-about { display: block; margin-top: 3px; font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+.cmp-gap { font-weight: 500; color: var(--muted); }
+.clue-easy { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 0.9rem; line-height: 1.6; }
+.clue-easy .clue-verdict { display: block; }
+.clue-method { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: #f8f9fc; font-size: 0.78rem; color: var(--muted); line-height: 1.55; }
+
 @media (max-width: 900px) {
   .grid, .trend-grid { grid-template-columns: 1fr; }
   .nav-inner { gap: 20px; }

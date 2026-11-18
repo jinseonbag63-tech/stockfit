@@ -129,7 +129,7 @@ export async function getSectors(key) {
       code: sector, name: sector === 'ALL' ? '시장 전체' : industryName(sector),
       n: Number(lastRow.n), cap: Number(lastRow.cap), upRatio: round(Number(lastRow.up) / Math.max(1, Number(lastRow.up) + Number(lastRow.down)) * 100, 0),
       today: round(Number(lastRow.ret) * 100), days: points.length,
-      temperature: a?.temperature ?? null, trend: a?.trend ?? null, week: a?.week ?? null, month: a?.month ?? null, rsi: a?.rsi ?? null,
+      temperature: a?.temperature ?? null, trend: a?.trend ?? null, week: a?.week ?? null, month: a?.month ?? null, rsi: a?.rsi ?? null, dev20: a?.dev20 ?? null,
       spark: points.slice(-60).map(p => round(p.v, 2)),
       leaders: (leaders.get(sector) ?? []).sort((x, y) => y.cap - x.cap).slice(0, 3).map(({ code, name }) => ({ code, name })),
     };

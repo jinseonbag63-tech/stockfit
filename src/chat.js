@@ -44,7 +44,10 @@ const SYSTEM = `너는 StockFit의 "AI 도우미"야. StockFit은 주식을 처�
 // 분석 결과 → 모델에게 줄 짧은 설명
 export function buildContext({ stock, fit, profile, indicators, price, macro, sample, mode }) {
   const lines = [`[사용자] 투자성향: ${profile.riskLevel}${profile.complete ? '' : ' (간이 진단)'}, 화면 모드: ${mode === 'expert' ? '전문가' : '초보자'}`];
-  if (mode === 'expert') lines.push('전문가 모드이므로 용어를 그대로 써도 되지만, 그래도 간결하게.');
+  // 모드별 답변 방식 (규칙 1의 기본 말투 위에 덧붙임, 매수·매도 권유 금지 등 다른 규칙은 그대로)
+  lines.push(mode === 'expert'
+    ? '[답변 방식] 전문가 모드: 용어(PER, ROE, RSI, VaR 등)는 그대로 쓰고, [분석 데이터]의 지표 수치와 점수가 나온 근거(기준표·업종 순위·비중)를 함께 짚어줘. 비유는 줄이고 간결하게, 600자 이내.'
+    : '[답변 방식] 초보자 모드: 일상 비유를 하나 들어 3~4문장으로 짧게. 전문 용어는 쓰지 말거나, 쓰면 바로 뒤에 괄호로 쉬운 뜻을 붙여줘. 숫자는 꼭 필요한 한두 개만.');
   if (profile.stockNotice) lines.push(`성향 안내(화면에 항상 표시됨): ${profile.stockNotice}`);
   if (!stock) return `${lines.join('\n')}\n[분석 데이터] 지금 보고 있는 종목이 없어요.`;
   lines.push(`[분석 데이터] ${stock.name} (${stock.code}, ${stock.market || '시장 정보 없음'}, 업종: ${stock.sector})`);

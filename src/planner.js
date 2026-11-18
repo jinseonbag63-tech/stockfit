@@ -124,6 +124,23 @@ export function buildPlan(stocks, { amount, method, custom, period, buy, lossLim
   const base = spent > 0 ? spent : amount;
   const avgVol = sum(stocks.map((s, i) => s.vol * realW[i]));
 
+  // 전문가 모드: 종목끼리 같이 움직이는 정도(상관관계)와 전체 위험 중 각 종목 몫(위험 기여도), 최근 1년
+  const n = stocks.length, len = recent[0].length;
+  const means = recent.map(r => sum(r) / len);
+  const cov = (i, j) => sum(recent[i].map((v, t) => (v - means[i]) * (recent[j][t] - means[j]))) / (len - 1);
+  const C = stocks.map((_, i) => stocks.map((__, j) => cov(i, j)));
+  const portVar = sum(realW.map((wi, i) => wi * sum(realW.map((wj, j) => wj * C[i][j]))));
+  items.forEach((it, i) => { it.riskShare = portVar > 0 ? round((realW[i] * sum(realW.map((wj, j) => wj * C[i][j]))) / portVar * 100, 1) : null; });
+  const corr = (i, j) => (C[i][i] > 0 && C[j][j] > 0 ? C[i][j] / Math.sqrt(C[i][i] * C[j][j]) : null);
+  const pairs = [];
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) pairs.push({ a: stocks[i].name, b: stocks[j].name, r: round(corr(i, j)) });
+  pairs.sort((x, y) => y.r - x.r);
+  const correlation = {
+    matrix: n <= 5 ? { names: stocks.map(st => st.name), rows: stocks.map((_, i) => stocks.map((__, j) => (i === j ? 1 : round(corr(i, j))))) } : null,
+    together: pairs[0] ?? null, apart: pairs[pairs.length - 1] ?? null,
+    average: pairs.length ? round(sum(pairs.map(p => p.r)) / pairs.length) : null,
+  };
+
   // 4) 과거 시뮬레이션 (고른 기간이 데이터보다 길면 가능한 만큼)
   const days = Math.min(PERIOD_DAYS[period] ?? 250, allDates.length);
   const from = allDates.length - days;
@@ -146,7 +163,7 @@ export function buildPlan(stocks, { amount, method, custom, period, buy, lossLim
     amount, method, methodLabel: METHODS[method], period, buy,
     asOf: allDates[allDates.length - 1],
     items, spent, cash: amount - spent,
-    portfolio: { fit, sectors, vol: round(vol, 1), avgVol: round(avgVol, 1), badDayPct: round(badDay * 100, 2), badDayWon: Math.round(badDay * base) },
+    portfolio: { fit, sectors, vol: round(vol, 1), avgVol: round(avgVol, 1), badDayPct: round(badDay * 100, 2), badDayWon: Math.round(badDay * base), correlation },
     lossLimit,
     sim: {
       from: dates[0], to: dates[dates.length - 1], days: dates.length, shortened: days < (PERIOD_DAYS[period] ?? 250) - 20,

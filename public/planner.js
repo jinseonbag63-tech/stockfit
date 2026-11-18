@@ -142,7 +142,8 @@ function render() {
       <td><strong>${esc(it.name)}</strong><span class="meta">${esc(it.sector || '')}</span></td>
       <td class="num">${it.weight}%</td><td class="num">${won(it.target)}</td>
       <td class="num">${won(it.close)}</td><td class="num">${it.shares.toLocaleString()}주</td><td class="num">${won(it.cost)}</td>
-      <td class="num">${it.fit ?? '-'}점</td></tr>`).join('');
+      <td class="num">${it.fit ?? '-'}점</td>
+      <td class="num expert-only">±${it.vol ?? '-'}%</td><td class="num expert-only">${it.riskShare ?? '-'}%</td></tr>`).join('');
   const zero = p.items.filter(i => i.shares === 0).map(i => i.name);
   show($('planSectorNote'), [
     top && top.pct >= 60 && port.sectors.length > 1 ? `${top.name} 업종에 ${top.pct}%가 몰려 있어요. 그 업종이 어려울 때 함께 흔들릴 수 있어요.` : '',
@@ -177,6 +178,13 @@ function render() {
         : '견딜 수 있다고 한 선 안에 있었어요.'));
   }
   $('planRiskEasy').className = `plan-easy ${verdict}`;
+  // 초보자 모드: 위험 점검 맨 위의 큰 결론 한 줄
+  $('planVerdict').className = `plan-verdict beginner-only ${verdict}`;
+  $('planVerdict').textContent = !p.profileSet ? '투자성향 설문을 하면 이 구성이 내 성향과 맞는지 알려드려요.'
+    : p.lossLimit == null ? `큰 손실도 감수한다고 하셨어요. 이 구성은 1년 동안 보통 ±${port.vol}% 정도 오르내렸어요.`
+    : verdict === 'over' ? '! 내가 견딜 수 있다고 한 손실보다 크게 흔들린 적이 있는 구성이에요.'
+    : '✓ 과거 기준으로는 내가 견딜 수 있다고 한 손실 안에 있었어요.';
+  renderCorrelation(port.correlation);
   $('planRiskEasy').innerHTML = easy.map(t => `<li>${t}</li>`).join('');
 
   // 3) 과거 시뮬레이션
@@ -207,6 +215,21 @@ function render() {
       return `<tr><td>${esc(it.name)}</td><td class="num">${won(m)}</td><td class="num">${(m / it.close).toFixed(1)}주</td></tr>`;
     }).join('');
   }
+}
+
+// 전문가 모드: 상관관계 표(5종목 이하) 또는 가장 같이 / 가장 다르게 움직이는 두 종목
+function renderCorrelation(c) {
+  if (!c) { $('planCorr').innerHTML = ''; return; }
+  const cell = r => `<td class="num corr ${r >= 0.7 ? 'hi' : r <= 0.3 ? 'lo' : ''}">${r == null ? '-' : r.toFixed(2)}</td>`;
+  const table = c.matrix ? `<div class="table-scroll"><table class="trend-table corr-table">
+      <thead><tr><th></th>${c.matrix.names.map(n => `<th>${esc(n)}</th>`).join('')}</tr></thead>
+      <tbody>${c.matrix.rows.map((row, i) => `<tr><th>${esc(c.matrix.names[i])}</th>${row.map(cell).join('')}</tr>`).join('')}</tbody></table></div>` : '';
+  const text = [
+    c.together ? `가장 같이 움직이는 두 종목: <strong>${esc(c.together.a)} · ${esc(c.together.b)}</strong> (${c.together.r.toFixed(2)})` : '',
+    c.apart && c.apart !== c.together ? `가장 다르게 움직이는 두 종목: <strong>${esc(c.apart.a)} · ${esc(c.apart.b)}</strong> (${c.apart.r.toFixed(2)})` : '',
+    c.average != null ? `평균 상관관계 ${c.average.toFixed(2)}` : '',
+  ].filter(Boolean).map(t => `<li>${t}</li>`).join('');
+  $('planCorr').innerHTML = table + `<ul class="plan-corr-list">${text}</ul>`;
 }
 
 // 그래프: 평가 금액, 넣은 돈, 손실 감내선 (+ 비교선). 라이브러리 없이 SVG로 그림

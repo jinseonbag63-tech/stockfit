@@ -42,6 +42,15 @@ function render(d) {
       <td class="num chg ${chg(c.market)}">${c.market == null ? '<span class="meta">준비 중</span>' : pct(c.market)}</td>
       <td><span class="clue-verdict ${KIND_CLASS[c.verdict?.kind] ?? ''}">${esc(c.verdict?.text ?? '-')}</span></td></tr>`).join('');
 
+  // 초보자 모드: 표 대신 결론 문장 (1주·1개월)
+  $('clueEasy').innerHTML = d.compare.map(c => `<li><strong>최근 ${c.label}</strong> 이 종목 <b class="chg ${chg(c.stock)}">${pct(c.stock)}</b>
+    ${c.sector != null || c.market != null ? `<span class="meta">(같은 업종 ${pct(c.sector)}, 시장 ${pct(c.market)})</span>` : ''}
+    <span class="clue-verdict ${KIND_CLASS[c.verdict?.kind] ?? ''}">→ ${esc(c.verdict?.text ?? '')}</span></li>`).join('');
+  // 전문가 모드: 판정 방법 공개
+  $('clueMethod').textContent = `판정 방법: 등락이 ±3% 안이면 "큰 움직임 없음". 시장 → 업종 순서로, 같은 방향으로 이 종목 움직임의 60% 이상 움직였으면 그쪽 영향으로 보고, `
+    + `차이가 3%p 안이면 "비슷하게", 그 밖은 "이 종목만의 움직임"으로 봐요. 크게 움직인 날은 하루 ±3%와 평소 하루 변동(최근 120일 표준편차 ${d.usualMove}%)의 2배 중 큰 값(±${d.bigLimit}%)을 넘은 날이에요. `
+    + '업종·시장은 시가총액 가중 자체 계산 지수예요.';
+
   // 2) 크게 움직인 날과 그날 앞뒤 공시·뉴스
   $('clueDaysNote').textContent = `최근 20거래일 중 하루 ±${d.bigLimit}% 이상`;
   $('clueDays').innerHTML = d.bigDays.length ? d.bigDays.map(b => {

@@ -346,7 +346,7 @@
           <div id="planTiles" class="plan-tiles"></div>
           <div class="table-scroll">
             <table class="trend-table plan-table">
-              <thead><tr><th>종목</th><th>비중</th><th>배정 금액</th><th>종가</th><th>살 수 있는 주수</th><th>실제 금액</th><th>적합도</th></tr></thead>
+              <thead><tr><th>종목</th><th>비중</th><th>배정 금액</th><th>종가</th><th>살 수 있는 주수</th><th>실제 금액</th><th>적합도</th><th class="expert-only">변동성(1년)</th><th class="expert-only">위험 기여도</th></tr></thead>
               <tbody id="planItems"></tbody>
             </table>
           </div>
@@ -355,8 +355,14 @@
 
         <article class="card">
           <div class="mini-head"><h4>위험 점검</h4><span>내 투자성향의 손실 감내와 비교</span></div>
+          <p id="planVerdict" class="plan-verdict beginner-only"></p>
           <div id="planRiskTiles" class="plan-tiles expert-only"></div>
           <ul id="planRiskEasy" class="plan-easy"></ul>
+          <div class="expert-only plan-corr">
+            <h4 class="plan-sub">종목끼리 얼마나 같이 움직이나 (상관관계, 최근 1년)</h4>
+            <p class="plan-note">1에 가까우면 같이 오르내리고, 0에 가까우면 따로, −1에 가까우면 반대로 움직여요. 같이 움직이는 종목만 모으면 섞어도 위험이 잘 줄지 않아요.</p>
+            <div id="planCorr"></div>
+          </div>
         </article>
 
         <article class="card">
@@ -454,12 +460,14 @@
           <div class="mini-head"><h4>왜 움직였을까?</h4><span>원인을 단정하지 않고 확인할 단서만 모았어요</span></div>
           <p id="clueStatus" class="plan-note"></p>
           <div id="clueBody" hidden>
-            <div class="table-scroll">
+            <ul id="clueEasy" class="clue-easy beginner-only"></ul>
+            <div class="table-scroll expert-only">
               <table class="trend-table clue-compare">
                 <thead><tr><th>기간</th><th>이 종목</th><th id="clueSectorHead">같은 업종</th><th>시장 전체</th><th>어디서 온 움직임일까</th></tr></thead>
                 <tbody id="clueCompare"></tbody>
               </table>
             </div>
+            <p id="clueMethod" class="clue-method expert-only"></p>
             <h5 class="clue-sub">크게 움직인 날 <span id="clueDaysNote"></span></h5>
             <ul id="clueDays" class="clue-days"></ul>
             <div class="clue-grid">
@@ -511,6 +519,7 @@
       <div id="sectorView" class="trend-body trend-sector-only">
         <p id="sectorStatus" class="feed-note" hidden></p>
         <div id="sectorBody" class="trend-body" hidden>
+          <p id="sectorSummary" class="plan-verdict beginner-only"></p>
           <article class="card sector-market">
             <div class="mini-head"><h4>시장 전체</h4><span id="sectorAsOf"></span></div>
             <div id="sectorMarket" class="sector-market-row"></div>
@@ -531,7 +540,7 @@
             <summary id="sectorAllTitle">전체 업종 보기</summary>
             <div class="table-scroll">
               <table class="trend-table">
-                <thead><tr><th>업종</th><th>종목 수</th><th>주가 온도</th><th>흐름</th><th>1주</th><th>1개월</th><th>오늘 오른 종목</th></tr></thead>
+                <thead><tr><th>업종</th><th>종목 수</th><th>주가 온도</th><th>흐름</th><th>1주</th><th>1개월</th><th>오늘 오른 종목</th><th class="expert-only">RSI(14)</th><th class="expert-only">20일 평균 대비</th><th class="expert-only">시가총액</th></tr></thead>
                 <tbody id="sectorAll"></tbody>
               </table>
             </div>
