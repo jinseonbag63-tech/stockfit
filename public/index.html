@@ -17,6 +17,7 @@
         <a href="#watch">관심종목</a>
         <a href="#compare">종목 비교</a>
         <a href="#trend">주가 흐름</a>
+        <a href="#planner">투자 플래너</a>
         <button type="button" id="navProfile">내 투자성향</button>
       </nav>
       <div class="nav-right">
@@ -163,7 +164,7 @@
         <article class="card planner">
           <h4>나만의 투자 플래너</h4>
           <p class="soon-text">투자금 · 기간 · 내 투자성향을 바탕으로 계획을 세워볼 수 있어요.</p>
-          <button type="button" class="planner-btn" disabled>준비 중이에요</button>
+          <button type="button" id="plannerLink" class="planner-btn">투자 플래너 열기</button>
         </article>
       </div>
     </section>
@@ -275,6 +276,115 @@
           <div id="compareRows" class="cmp-rows"></div>
         </article>
         <p class="fine">종목 분석 화면과 같은 방법으로 계산한 점수예요. 점수 차이가 5점보다 작으면 "비슷해요"로 보여줘요. 투자 권유가 아닌 정보 제공 목적이에요.</p>
+      </div>
+    </section>
+
+    <!-- 투자 플래너 화면 (#planner): 동작은 planner.js. 추천이 아니라 내가 짠 구성을 점검 -->
+    <section id="planner" class="wrap view-planner" aria-labelledby="plannerTitle">
+      <div class="page-hero">
+        <p class="eyebrow">투자 플래너</p>
+        <h1 id="plannerTitle">내가 짠 구성, 내 성향과 맞을까요?</h1>
+        <p class="hero-sub">종목과 금액을 정하면 예시 구성과 위험을 점검하고, 과거에 이렇게 투자했다면 어땠을지 보여드려요.</p>
+      </div>
+
+      <form id="planForm" class="card plan-form" autocomplete="off">
+        <div class="plan-grid">
+          <div>
+            <label class="field plan-amount">투자금 (원)
+              <input id="planAmount" type="text" inputmode="numeric" />
+            </label>
+            <div class="chips" id="planAmountChips">
+              <button type="button" data-amount="1000000">100만</button>
+              <button type="button" data-amount="5000000">500만</button>
+              <button type="button" data-amount="10000000">1,000만</button>
+              <button type="button" data-amount="30000000">3,000만</button>
+            </div>
+            <p class="plan-label">나누는 방식</p>
+            <div class="chips plan-choice" id="planMethod">
+              <button type="button" data-value="equal">똑같이 나누기</button>
+              <button type="button" data-value="fit">적합도가 높은 종목에 더 많이</button>
+              <button type="button" data-value="lowvol">덜 흔들리는 종목에 더 많이</button>
+              <button type="button" data-value="custom">직접 비중 입력</button>
+            </div>
+            <p class="plan-label">과거 시뮬레이션</p>
+            <div class="plan-two">
+              <div class="chips" id="planPeriod">
+                <button type="button" data-value="1y">1년</button>
+                <button type="button" data-value="3y">3년</button>
+              </div>
+              <div class="chips" id="planBuy">
+                <button type="button" data-value="lump">한 번에 사기</button>
+                <button type="button" data-value="monthly">매달 나눠 사기</button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p class="plan-label" style="margin-top:0">종목 (2~10개)</p>
+            <div class="search plan-search">
+              <label for="planQ" class="sr-only">종목 추가</label>
+              <input id="planQ" list="stockList" placeholder="종목 이름 또는 코드로 추가" />
+              <button type="button" id="planAdd">추가</button>
+            </div>
+            <div id="planWatch" class="plan-watch" hidden>
+              <p class="picks-title">관심종목에서 고르기</p>
+              <div id="planWatchChips" class="pick-chips"></div>
+            </div>
+            <ul id="planStocks" class="plan-stocks"></ul>
+            <p id="planCustomSum" class="plan-sum" hidden></p>
+          </div>
+        </div>
+        <p id="planError" class="error" role="alert" hidden></p>
+        <button type="submit" id="planSubmit" class="primary plan-submit">점검하기</button>
+      </form>
+
+      <div id="planEmpty" class="empty">종목 2개 이상과 투자금을 정하고 "점검하기"를 눌러보세요.</div>
+
+      <div id="planResult" class="plan-body" hidden>
+        <article class="card">
+          <div class="mini-head"><h4>예시 구성</h4><span>추천이 아니에요</span></div>
+          <p id="planCompNote" class="plan-note"></p>
+          <div id="planTiles" class="plan-tiles"></div>
+          <div class="table-scroll">
+            <table class="trend-table plan-table">
+              <thead><tr><th>종목</th><th>비중</th><th>배정 금액</th><th>종가</th><th>살 수 있는 주수</th><th>실제 금액</th><th>적합도</th></tr></thead>
+              <tbody id="planItems"></tbody>
+            </table>
+          </div>
+          <p id="planSectorNote" class="notice plan-warn" hidden></p>
+        </article>
+
+        <article class="card">
+          <div class="mini-head"><h4>위험 점검</h4><span>내 투자성향의 손실 감내와 비교</span></div>
+          <div id="planRiskTiles" class="plan-tiles expert-only"></div>
+          <ul id="planRiskEasy" class="plan-easy"></ul>
+        </article>
+
+        <article class="card">
+          <div class="mini-head"><h4>과거 시뮬레이션</h4><span id="planSimNote"></span></div>
+          <p class="callout-sm">과거에 이 비중으로 투자했다면 어땠을지 다시 계산한 거예요. <strong>과거 결과가 미래를 보장하지 않아요.</strong></p>
+          <div id="planSimStats" class="plan-tiles four"></div>
+          <div id="planChart" class="trend-chart plan-chart"></div>
+          <div class="plan-legend" id="planLines">
+            <span class="lg val">평가 금액</span><span class="lg inv">넣은 돈</span>
+            <span class="lg limit" id="planLimitLegend" hidden></span>
+            <label><input type="checkbox" id="planLineEq" /> 똑같이 나눴다면</label>
+            <label><input type="checkbox" id="planLineBond" /> 국고채 금리라면</label>
+          </div>
+          <h4 class="plan-sub">종목별로 번 돈·잃은 돈</h4>
+          <ul id="planContrib" class="plan-contrib"></ul>
+          <p class="fine">주가만으로 계산해서 <strong>배당금은 빠져 있고</strong>, 수수료·세금도 들어 있지 않아요. 지금 잘 오른 종목을 골라 과거를 보면 결과가 좋아 보이기 쉬워요. 하루 늦은 종가 기준이에요.</p>
+        </article>
+
+        <article id="planDca" class="card" hidden>
+          <div class="mini-head"><h4>매달 나눠 사기 계획</h4><span>예시</span></div>
+          <p id="planDcaNote" class="plan-note"></p>
+          <table class="trend-table plan-table">
+            <thead><tr><th>종목</th><th>매달 금액</th><th>대략 주수</th></tr></thead>
+            <tbody id="planDcaItems"></tbody>
+          </table>
+        </article>
+
+        <p class="fine">투자 권유가 아닌 정보 제공 목적의 점검이에요. 실제 투자 판단은 본인이 해야 해요.</p>
       </div>
     </section>
 

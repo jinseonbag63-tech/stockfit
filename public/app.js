@@ -2,8 +2,9 @@
 import { SURVEY, riskFromAnswers } from './survey.js';
 import { initViews, goTo } from './views.js';
 import { initTrend, openTrend } from './technical.js';
-import { initCompare, openCompare, refreshCompare } from './compare.js';
+import { initCompare, openCompare, refreshCompare, renderWatchChips as compareWatchChips } from './compare.js';
 import { initWatch, refreshWatch, watchStocks } from './watch.js';
+import { initPlanner, refreshPlanner, renderWatchChips as plannerWatchChips } from './planner.js';
 
 const $ = id => document.getElementById(id);
 
@@ -200,7 +201,8 @@ function updateWatchBtn() {
 // 관심종목 화면(표·정렬·진단·비교 선택)은 watch.js가 그림. 여기서는 소식과 함께 다시 불러오기만
 function renderWatch() {
   loadWatchFeed();
-  refreshWatch();
+  // 종목 비교·투자 플래너의 "관심종목에서 고르기"도 다 불러온 뒤 다시 그림
+  refreshWatch().then(() => { compareWatchChips(); plannerWatchChips(); });
 }
 // watch.js에서 삭제·순서 바꾸기를 하면 목록 저장
 function setWatchlist(list) {
@@ -346,7 +348,7 @@ $('watchFeedMore').addEventListener('click', () => { watchFeedLimit += WATCH_PAG
 // 검색 (자동완성 목록은 종목 분석·주가 흐름 검색창이 같이 씀)
 $('searchForm').addEventListener('submit', e => { e.preventDefault(); run($('q').value); });
 let searchTimer;
-for (const input of [$('q'), $('trendQ'), $('compareA'), $('compareB')]) input.addEventListener('input', () => {
+for (const input of [$('q'), $('trendQ'), $('compareA'), $('compareB'), $('planQ')]) input.addEventListener('input', () => {
   clearTimeout(searchTimer);
   const q = input.value.trim();
   if (!q) return;
@@ -393,6 +395,7 @@ $('surveyForm').addEventListener('submit', () => {
   renderWatch();
   loadPicks();
   refreshCompare();
+  refreshPlanner();
 });
 
 // 로그인·회원가입
@@ -434,6 +437,7 @@ function applyAccount(u) {
   refreshChatForAccount();
   loadPicks();
   refreshCompare();
+  refreshPlanner();
 }
 
 // 로그인 창의 네 가지 화면: 로그인, 회원가입, 비밀번호 찾기, 새 비밀번호 정하기
@@ -539,6 +543,7 @@ $('logoutBtn').addEventListener('click', async () => {
   refreshChatForAccount();
   loadPicks();
   refreshCompare();
+  refreshPlanner();
 });
 $('resendVerify').addEventListener('click', async () => {
   try {
@@ -709,10 +714,12 @@ function renderDataStatus(s) {
     `<li><span class="ds-state ${state}">${LABEL[state]}</span><strong>${name}</strong><span class="ds-text">${esc(text)}</span></li>`).join('');
 }
 
-// 화면 4개: 종목 분석(app.js), 관심종목(watch.js), 종목 비교(compare.js), 주가 흐름(technical.js)
+// 화면 5개: 종목 분석(app.js), 관심종목(watch.js), 종목 비교(compare.js), 주가 흐름(technical.js), 투자 플래너(planner.js)
 initTrend({ $, esc, show, api, onAnalyze: openAnalysis });
 initCompare({ $, esc, show, api, getProfile: () => profile, getWatchStocks: watchStocks, onAnalyze: openAnalysis });
 initWatch({ $, esc, api, store, analyze, getProfile: () => profile, getWatchlist: () => watchlist, setWatchlist, onAnalyze: openAnalysis, onCompare: openCompare });
+initPlanner({ $, esc, show, api, store, getProfile: () => profile, getWatchStocks: watchStocks });
+$('plannerLink').addEventListener('click', () => goTo('planner'));
 initViews();
 
 // 시작

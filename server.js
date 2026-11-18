@@ -13,6 +13,7 @@ import { buildProfile, computeFit, CRITERIA, METRICS, RISK_LEVELS } from './src/
 import { SURVEY, cleanAnswers } from './public/survey.js';
 import { getPriceStats, getPriceHistory, getMarketCaps } from './src/price.js';
 import { analyzeTrend } from './src/technical.js';
+import { buildPlan, METHODS, LOSS_LIMIT } from './src/planner.js';
 import { getRates } from './src/macro.js';
 import { initPeers, syncPeers, peerStatus, loadPeers, rankAmong, MIN_PEERS } from './src/peers.js';
 import { openDb } from './src/db.js';
@@ -267,6 +268,37 @@ async function handleAuth(req, res, route) {
   return json(res, 404, { error: 'Not found' });
 }
 
+// 투자 플래너: 고른 종목·금액·나누는 방식으로 예시 구성과 위험 점검, 과거 시뮬레이션 (추천이 아니라 점검)
+async function handlePlan(req, res) {
+  if (!req.headers['content-type']?.startsWith('application/json')) return json(res, 415, { error: '잘못된 요청이에요.' });
+  if (!PRICE_KEY) return json(res, 503, { error: '투자 플래너는 시세 키(DATA_GO_KR_KEY)가 있어야 쓸 수 있어요.' });
+  const body = await readBody(req);
+  const codes = [...new Set(Array.isArray(body.codes) ? body.codes.filter(c => typeof c === 'string') : [])];
+  const amount = Math.round(Number(body.amount));
+  if (codes.length < 2 || codes.length > 10) return json(res, 400, { error: '종목을 2개에서 10개까지 골라주세요.' });
+  if (!(amount >= 100_000 && amount <= 10_000_000_000)) return json(res, 400, { error: '투자금은 10만 원에서 100억 원 사이로 넣어주세요.' });
+  const method = METHODS[body.method] ? body.method : 'equal';
+  const period = body.period === '3y' ? '3y' : '1y';
+  const buy = body.buy === 'monthly' ? 'monthly' : 'lump';
+  await ready;
+  const answers = cleanAnswers(body.profile) ?? {};
+  const stocks = [];
+  let bond3y = null;
+  for (const code of codes) {
+    const stock = getByCode(code);
+    if (!stock) return json(res, 404, { error: `찾을 수 없는 종목이에요: ${code}` });
+    const inputs = await stockInputs(stock);
+    const rows = await optional('price', () => getPriceHistory(PRICE_KEY, stock.code));
+    if (!rows) return json(res, 502, { error: `${stock.name}의 주가 데이터를 불러오지 못했어요. (${sourceErrors.price})` });
+    bond3y ??= inputs.macro?.bond3y ?? null;
+    stocks.push({ code: stock.code, name: stock.name, sector: industryName(inputs.data.info?.industryCode),
+                  fit: scoreStock(inputs, answers).fit.total, close: rows[rows.length - 1].close, rows });
+  }
+  const lossLimit = answers.q3 in LOSS_LIMIT ? LOSS_LIMIT[answers.q3] : null;
+  const plan = buildPlan(stocks, { amount, method, custom: body.custom, period, buy, lossLimit, bond3y });
+  return json(res, 200, { ...plan, bond3y, profileSet: Boolean(cleanAnswers(body.profile)) }, { 'Cache-Control': 'no-store' });
+}
+
 // AI 도우미: 지금 보는 종목의 분석 결과를 서버에서 다시 만들어 함께 보냄
 async function handleChat(req, res) {
   if (!req.headers['content-type']?.startsWith('application/json')) return json(res, 415, { error: '잘못된 요청이에요.' });
@@ -305,6 +337,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === '/api/chat' && req.method === 'POST') return await handleChat(req, res);
+    if (url.pathname === '/api/plan' && req.method === 'POST') return await handlePlan(req, res);
 
     if (url.pathname === '/api/stocks') {
       await ready;

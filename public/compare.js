@@ -47,7 +47,8 @@ export function refreshCompare() {
   if (pair) load(pair[0].stock.code, pair[1].stock.code);
 }
 
-function renderWatchChips() {
+// 관심종목을 다 불러온 뒤에도 다시 그림 (app.js가 호출)
+export function renderWatchChips() {
   const list = getWatchStocks();
   $('compareWatch').hidden = !list.length;
   $('compareWatchChips').innerHTML = list.map(s => `<button type="button" data-name="${esc(s.name)}"><strong>${esc(s.name)}</strong></button>`).join('');

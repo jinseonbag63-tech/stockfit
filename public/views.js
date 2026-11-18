@@ -1,7 +1,7 @@
-// 화면 전환: 주소(#analysis, #watch, #compare, #trend)에 따라 화면 하나만 보여줘요.
+// 화면 전환: 주소(#analysis, #watch, #compare, #trend, #planner)에 따라 화면 하나만 보여줘요.
 // body[data-view]를 바꾸면 style.css가 .view-이름 요소만 보이게 해요.
 
-const VIEWS = ['analysis', 'watch', 'compare', 'trend'];
+const VIEWS = ['analysis', 'watch', 'compare', 'trend', 'planner'];
 const listeners = {};
 
 // 그 화면이 보일 때마다 실행할 일 (그래프 다시 그리기 등)
