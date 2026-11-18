@@ -446,6 +446,29 @@ body:not([data-view="planner"]) .view-planner { display: none !important; }
 .sig.neutral, .sig.none { color: var(--muted); background: #f1f3f7; }
 .trend-fine { margin: 0; }
 
+/* 주가 흐름: 종목별 / 업종별 탭 (technical.js, sectors.js) */
+#trend[data-tab="stock"] .trend-sector-only, #trend[data-tab="sector"] .trend-stock-only { display: none !important; }
+.trend-tabs { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 18px; background: #eceff5; border-radius: 12px; }
+.trend-tabs button { border: 0; background: none; padding: 8px 22px; border-radius: 9px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.trend-tabs button[aria-selected="true"] { background: var(--surface); color: var(--blue); box-shadow: 0 1px 4px rgba(24, 34, 58, 0.08); }
+.sector-market-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 130px; gap: 10px; align-items: center; margin-top: 8px; }
+.sector-market-row span { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-bottom: 3px; }
+.sector-market-row strong { font-size: 1.05rem; }
+.sector-top { list-style: none; padding: 0; margin: 4px 0 0; display: grid; gap: 0; }
+.sector-top li { display: grid; grid-template-columns: 34px minmax(0, 1fr) 130px; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+.sector-top li:first-child { border-top: 0; }
+.rank-no { width: 28px; height: 28px; border-radius: 50%; background: var(--blue-soft); color: var(--blue); font-weight: 800; display: grid; place-items: center; }
+.sector-name { margin: 0; } .sector-name .meta { display: inline; font-size: 0.78rem; }
+.sector-stats { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 0.82rem; color: var(--muted); }
+.sector-stats b { font-weight: 700; }
+.sector-leaders { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.spark-cell { justify-self: end; }
+.spark path { fill: none; stroke-width: 1.8; stroke-linejoin: round; }
+.spark.up path { stroke: var(--red); } .spark.down path { stroke: var(--blue); }
+.sector-all summary { cursor: pointer; font-weight: 700; color: var(--blue); font-size: 0.92rem; }
+.sector-all .table-scroll { margin-top: 10px; }
+.sector-all td.chg { font-size: 0.86rem; }
+
 /* 투자 플래너 화면 (planner.js) */
 .plan-form { margin-bottom: 20px; }
 .plan-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
@@ -473,7 +496,7 @@ body:not([data-view="planner"]) .view-planner { display: none !important; }
 .plan-body > * { min-width: 0; }
 .plan-note { margin: 4px 0 12px; font-size: 0.82rem; color: var(--muted); }
 .plan-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 8px 0 14px; }
-.plan-tiles.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.plan-tiles.four { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .plan-tile { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .plan-tile span { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
 .plan-tile strong { display: block; font-size: 1.3rem; letter-spacing: -0.02em; margin: 2px 0; }
@@ -518,6 +541,10 @@ body:not([data-view="planner"]) .view-planner { display: none !important; }
   .whead { display: none; }
   .plan-grid, .plan-tiles, .plan-tiles.four { grid-template-columns: minmax(0, 1fr); }
   .plan-choice { grid-template-columns: minmax(0, 1fr); }
+  .sector-market-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sector-market-row .spark-cell { grid-column: 1 / -1; justify-self: start; }
+  .sector-top li { grid-template-columns: 30px minmax(0, 1fr); }
+  .sector-top .spark-cell { grid-column: 2; justify-self: start; }
   .plan-contrib li { grid-template-columns: 80px minmax(0, 1fr) 96px; }
   .wrow { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name actions" "fit fit" "crit crit" "temp chg"; gap: 8px 12px; }
   .w-name { grid-area: name; } .w-actions { grid-area: actions; } .w-crit { grid-area: crit; }

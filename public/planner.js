@@ -160,7 +160,9 @@ function render() {
   easy.push(`이 구성은 1년 동안 보통 <strong>±${port.vol}%</strong> 정도 오르내렸어요.`
     + (port.vol < port.avgVol * 0.9 ? ` 종목 하나씩(평균 ±${port.avgVol}%)보다 작은데, 서로 다르게 움직이는 종목을 섞은 효과예요.` : ''));
   easy.push(`주가가 나쁜 날(100일 중 2~3일)에는 하루에 약 <strong>${esc(won(Math.abs(port.badDayWon)))}</strong>을 잃을 수 있었어요.`);
-  const worst = sim.worstPct < 0 ? `원금 대비 가장 크게 잃었을 때는 <strong>${pct(sim.worstPct)}</strong>(${day(sim.worstDate)})였어요.` : '시뮬레이션 기간 동안 원금 아래로 내려간 적이 없었어요.';
+  const worst = (sim.worstPct < 0 ? `원금 대비 가장 크게 잃었을 때는 <strong>${pct(sim.worstPct)}</strong>(${day(sim.worstDate)})였어요.` : '시뮬레이션 기간 동안 원금 아래로 내려간 적이 없었어요.')
+    // 원금보다 위에 있어도 고점에서 크게 떨어졌다면 함께 알려줌 (원금 기준만 보면 위험이 작아 보일 수 있어서)
+    + (sim.peakDrawdownPct < sim.worstPct - 5 ? ` 다만 가장 높았던 때와 비교하면 <strong>${pct(sim.peakDrawdownPct)}</strong>(${day(sim.peakDrawdownDate)})까지 떨어진 적이 있어요.` : '');
   let verdict = 'none';
   if (!p.profileSet) easy.push(`${worst} 투자성향 설문을 하면 내가 견딜 수 있는 손실과 비교해 드려요.`);
   else if (p.lossLimit == null) easy.push(`${worst} 설문에서 큰 손실도 감수한다고 하셨어요.`);
@@ -183,7 +185,8 @@ function render() {
   $('planSimStats').innerHTML = [
     ['이 구성', pct(sim.returnPct), `${man(sim.invested)} → ${man(sim.value)}`, chg(sim.returnPct)],
     ['원금 대비 최저', sim.worstPct < 0 ? pct(sim.worstPct) : '없음',
-      sim.worstPct < 0 ? (sim.stillBelow ? '아직 원금을 회복하지 못했어요' : `${sim.recoveredDays}거래일 만에 원금 회복`) : '', sim.worstPct < 0 ? 'down' : ''],
+      sim.worstPct < 0 ? (sim.stillBelow ? '아직 원금을 회복하지 못했어요' : `${sim.recoveredDays}거래일 만에 원금 회복`) : '원금 아래로 내려간 적 없음', sim.worstPct < 0 ? 'down' : ''],
+    ['고점 대비 최대 하락', pct(sim.peakDrawdownPct), sim.peakDrawdownDate ? `${day(sim.peakDrawdownDate)} 무렵` : '', sim.peakDrawdownPct < 0 ? 'down' : ''],
     ['똑같이 나눴다면', pct(sim.equalReturnPct), '같은 종목·같은 날 산 경우', chg(sim.equalReturnPct)],
     ['국고채 금리라면', sim.bondReturnPct == null ? '-' : pct(sim.bondReturnPct), p.bond3y == null ? '금리 키가 없어 생략' : `연 ${p.bond3y}%로 계산`, ''],
   ].map(([k, v, s, c]) => `<div class="plan-tile"><span>${k}</span><strong class="chg ${c}">${esc(v)}</strong><small>${esc(s)}</small></div>`).join('');

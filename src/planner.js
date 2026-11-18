@@ -73,7 +73,15 @@ function lossStats(series, dates, limit) {
     recovered = back ? back.t - worst.t : null;
   }
   const below = limit == null ? null : series.filter(p => p.value / p.invested - 1 < -limit / 100).length;
+  // 고점 대비 최대 하락: 원금보다 위에 있어도 가장 높았던 때보다 얼마나 떨어졌는지 (매달 사면 넣은 돈 대비 비율로)
+  let peak = 0, dd = { ratio: 0, t: null };
+  for (const p of series) {
+    const q = p.value / p.invested;
+    peak = Math.max(peak, q);
+    if (q / peak - 1 < dd.ratio) dd = { ratio: q / peak - 1, t: p.t };
+  }
   return {
+    peakDrawdownPct: round(dd.ratio * 100), peakDrawdownDate: dd.t == null ? null : dates[dd.t],
     worstPct: round(worst.ratio * 100), worstDate: worst.t == null ? null : dates[worst.t],
     recoveredDays: recovered, stillBelow: worst.t != null && recovered == null, daysBelowLimit: below,
   };

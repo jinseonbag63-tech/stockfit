@@ -14,8 +14,19 @@ const num = v => (v == null ? '-' : v.toLocaleString(undefined, { maximumFractio
 const day = d => `${d.slice(0, 4)}.${d.slice(4, 6)}.${d.slice(6, 8)}`;
 const badge = s => (s ? `<span class="sig ${s}">${SIGNAL[s]}</span>` : '<span class="sig none">-</span>');
 
+// 종목별 / 업종별 탭: section[data-tab]으로 .trend-stock-only / .trend-sector-only를 바꿔 보여줌
+const tabListeners = [];
+export function onTrendTab(fn) { tabListeners.push(fn); }
+export function setTrendTab(tab) {
+  $('trend').dataset.tab = tab;
+  $('trendTabs').querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  for (const fn of tabListeners) fn(tab);
+  if (tab === 'stock' && data) drawChart();
+}
+
 export function initTrend(deps) {
   ({ $, esc, show, api, onAnalyze } = deps);
+  $('trendTabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) setTrendTab(b.dataset.tab); });
   onShowView('trend', () => data && drawChart()); // 숨겨져 있던 동안은 폭을 몰라서 보일 때 다시 그림
   $('trendForm').addEventListener('submit', e => { e.preventDefault(); load($('trendQ').value); });
   $('trendAnalyze').addEventListener('click', () => data && onAnalyze(data.stock.code, data.stock.name));
@@ -32,6 +43,7 @@ export function initTrend(deps) {
 
 // 종목 분석 화면의 "이 종목 주가 흐름 보기"에서 열 때
 export function openTrend(code, name) {
+  setTrendTab('stock');
   $('trendQ').value = name;
   goTo('trend');
   load(code);

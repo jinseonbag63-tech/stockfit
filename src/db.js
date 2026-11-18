@@ -63,6 +63,17 @@ const SQLITE_SCHEMA = `
     value      TEXT    NOT NULL,        -- JSON
     updated_at INTEGER NOT NULL
   );
+  -- 업종별 상태: 날짜별 업종(KSIC 앞 2자리, 시장 전체는 'ALL') 하루 등락 (시가총액 가중)
+  CREATE TABLE IF NOT EXISTS sector_daily (
+    sector TEXT    NOT NULL,
+    date   TEXT    NOT NULL,            -- YYYYMMDD
+    ret    REAL    NOT NULL,            -- 하루 등락률 (0.012 = +1.2%)
+    up     INTEGER NOT NULL,            -- 오른 종목 수
+    down   INTEGER NOT NULL,            -- 내린 종목 수
+    n      INTEGER NOT NULL,            -- 종목 수
+    cap    REAL    NOT NULL,            -- 업종 시가총액 (원)
+    PRIMARY KEY (sector, date)
+  );
 `;
 
 // Postgres용 테이블 정의 (이메일은 항상 소문자로 저장해서 대소문자 구분이 필요 없음)
@@ -117,6 +128,16 @@ const POSTGRES_SCHEMA = `
     key        TEXT   PRIMARY KEY,
     value      TEXT   NOT NULL,
     updated_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS sector_daily (
+    sector TEXT             NOT NULL,
+    date   TEXT             NOT NULL,
+    ret    DOUBLE PRECISION NOT NULL,
+    up     INTEGER          NOT NULL,
+    down   INTEGER          NOT NULL,
+    n      INTEGER          NOT NULL,
+    cap    DOUBLE PRECISION NOT NULL,
+    PRIMARY KEY (sector, date)
   );
 `;
 

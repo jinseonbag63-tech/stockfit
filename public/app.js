@@ -5,6 +5,7 @@ import { initTrend, openTrend } from './technical.js';
 import { initCompare, openCompare, refreshCompare, renderWatchChips as compareWatchChips } from './compare.js';
 import { initWatch, refreshWatch, watchStocks } from './watch.js';
 import { initPlanner, refreshPlanner, renderWatchChips as plannerWatchChips } from './planner.js';
+import { initSectors } from './sectors.js';
 
 const $ = id => document.getElementById(id);
 
@@ -705,6 +706,8 @@ function renderDataStatus(s) {
     ['DART (재무제표·공시)', s.dart ? 'on' : 'off', s.dart ? (s.fullList ? '상장사 전체 분석 가능' : '상장사 목록 준비 중') : '없으면 예시 3종목만 분석해요.'],
     ['업종 비교 데이터', !s.dart ? 'off' : p.error ? 'error' : p.metrics ? 'on' : 'wait', peerText],
     ['주가 시세 (공공데이터포털)', s.price, s.price === 'off' ? '없으면 가격 수준·주가 안정성을 빼고 계산해요.' : s.priceError || '변동성·위험 등급·PER·PBR 계산'],
+    ['업종별 상태 (자체 계산 지수)', s.price === 'off' ? 'off' : s.sectors?.error ? 'error' : s.sectors?.running ? 'wait' : s.sectors?.finishedAt ? 'on' : 'wait',
+      s.price === 'off' ? '시세 키가 있어야 계산해요.' : s.sectors?.error || (s.sectors?.running ? `최근 주가 모으는 중 (${s.sectors.done}/${s.sectors.total}거래일)` : s.sectors?.finishedAt ? `최근 ${s.sectors.done}거래일 준비됨` : '업종 비교 데이터 수집 뒤 시작해요.')],
     ['금리 (한국은행 ECOS)', s.macro, s.macro === 'off' ? '없으면 금리 반영 없이 계산해요.' : s.macroError || '배당과 국고채 금리 비교, 고금리 반영'],
     ['뉴스 (네이버 검색)', !s.news ? 'off' : s.newsError ? 'error' : 'on', !s.news ? '없으면 공시만 보여줘요.' : s.newsError || `종목 뉴스 표시${s.newsApi ? ` (${s.newsApi} 방식)` : ''}`],
     ['AI 도우미 (OpenAI)', s.ai ? 'on' : 'off', s.ai ? `${s.aiModel} 모델 사용` : '없으면 도우미 버튼이 보이지 않아요.'],
@@ -719,6 +722,7 @@ initTrend({ $, esc, show, api, onAnalyze: openAnalysis });
 initCompare({ $, esc, show, api, getProfile: () => profile, getWatchStocks: watchStocks, onAnalyze: openAnalysis });
 initWatch({ $, esc, api, store, analyze, getProfile: () => profile, getWatchlist: () => watchlist, setWatchlist, onAnalyze: openAnalysis, onCompare: openCompare });
 initPlanner({ $, esc, show, api, store, getProfile: () => profile, getWatchStocks: watchStocks });
+initSectors({ $, esc, api, openTrend });
 $('plannerLink').addEventListener('click', () => goTo('planner'));
 initViews();
 

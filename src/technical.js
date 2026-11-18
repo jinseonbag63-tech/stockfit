@@ -215,7 +215,10 @@ function buildMovingAverages(close) {
 function temperature(x) {
   const parts = [x.rsi, x.stoch, x.stochRsi, x.williams + 100, x.uo, Math.min(100, Math.max(0, 50 + x.cci / 4))]
     .filter(v => v != null && Number.isFinite(v));
-  const score = parts.reduce((a, b) => a + b, 0) / parts.length;
+  return tempOf(parts.reduce((a, b) => a + b, 0) / parts.length);
+}
+// 0~100 온도 → 단계 (종목·업종 공통)
+function tempOf(score) {
   const level = score >= 70 ? 'hot' : score >= 60 ? 'warm' : score > 40 ? 'neutral' : score > 30 ? 'cool' : 'cold';
   return { score: Math.round(score), level, ...TEMPERATURE[level] };
 }
@@ -261,5 +264,41 @@ export function analyzeTrend(rawRows) {
     days: rows.length, adjusted,
     temperature: temperature(x), trend: trend(indicators, movingAverages),
     indicators, movingAverages, chart,
+  };
+}
+
+// 업종·시장 지수 (sectors.js): 종가만 있어서 종가로 계산하는 지표만 써요
+// points: [{ d, v }] 날짜 오름차순 지수 값
+// 온도 = RSI(14)·StochRSI(14)·20일 평균 대비 위치의 평균, 흐름 = 이동평균 8개 + MACD + 1개월 등락
+const INDEX_MAS = [5, 10, 20, 60];
+export function analyzeIndex(points) {
+  const v = points.map(p => p.v);
+  const lastV = last(v);
+  const rsi = rsiSeries(v, 14);
+  const stochRsi = rsi.map((r, i) => {
+    const w = windowOf(rsi, i, 14);
+    if (!w || w.includes(null)) return null;
+    const hi = Math.max(...w), lo = Math.min(...w);
+    return hi === lo ? 50 : ((r - lo) / (hi - lo)) * 100;
+  });
+  const ma20 = last(sma(v, 20));
+  const dev20 = ma20 ? (lastV / ma20 - 1) * 100 : null;
+  const ret = n => (v.length > n ? (lastV / v[v.length - 1 - n] - 1) * 100 : null);
+  const parts = [last(rsi), last(stochRsi), dev20 == null ? null : Math.min(100, Math.max(0, 50 + dev20 * 5))]
+    .filter(x => x != null && Number.isFinite(x));
+
+  const sig = ma => (ma == null ? null : lastV > ma ? 'up' : lastV < ma ? 'down' : 'neutral');
+  const mas = INDEX_MAS.map(n => ({ period: n, smaSignal: sig(last(sma(v, n))), emaSignal: sig(last(ema(v, n))) }));
+  const ema26 = ema(v, 26);
+  const macd = ema(v, 12).map((x, i) => (x == null || ema26[i] == null ? null : x - ema26[i]));
+  const macdSignal = last(ema(macd, 9));
+  const indicators = [
+    { key: 'macd', signal: last(macd) == null || macdSignal == null ? null : last(macd) > macdSignal ? 'up' : 'down' },
+    { key: 'roc', signal: ret(20) == null ? null : ret(20) > 0.5 ? 'up' : ret(20) < -0.5 ? 'down' : 'neutral' },
+  ];
+  return {
+    temperature: parts.length ? tempOf(parts.reduce((a, b) => a + b, 0) / parts.length) : null,
+    trend: trend(indicators, mas),
+    rsi: round(last(rsi)), dev20: round(dev20), week: round(ret(5)), month: round(ret(20)),
   };
 }

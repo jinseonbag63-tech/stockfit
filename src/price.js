@@ -120,6 +120,16 @@ export async function getPriceStats(key, code) {
   return { asOf: latest.date, close: latest.close, marketCap: latest.cap, ...priceStats(rows) };
 }
 
+// 하루치 전체 종목 시세 (업종별 상태 계산용, sectors.js). 휴장일이나 아직 안 올라온 날은 빈 배열
+// 코스피·코스닥만, 등락률은 거래소 기준가 대비라 액면분할 같은 날도 실제 등락이에요
+export async function getDailyAll(key, basDt) {
+  const items = await call(key, { basDt, numOfRows: '5000', pageNo: '1' });
+  return items.filter(i => i.mrktCtg === 'KOSPI' || i.mrktCtg === 'KOSDAQ').map(i => ({
+    code: String(i.srtnCd ?? '').replace(/^A/, ''), market: i.mrktCtg,
+    close: toNum(i.clpr), change: toNum(i.fltRt), cap: toNum(i.mrktTotAmt),
+  })).filter(r => r.close > 0 && r.cap > 0 && r.change != null);
+}
+
 // 전체 종목의 최근 시가총액 (업종 PER·PBR 비교용). 최근 영업일을 찾아 하루치를 한 번에
 let capsCache = null;
 export async function getMarketCaps(key) {

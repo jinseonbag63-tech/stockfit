@@ -14,6 +14,7 @@ import { SURVEY, cleanAnswers } from './public/survey.js';
 import { getPriceStats, getPriceHistory, getMarketCaps } from './src/price.js';
 import { analyzeTrend } from './src/technical.js';
 import { buildPlan, METHODS, LOSS_LIMIT } from './src/planner.js';
+import { initSectors, syncSectors, getSectors, sectorStatus } from './src/sectors.js';
 import { getRates } from './src/macro.js';
 import { initPeers, syncPeers, peerStatus, loadPeers, rankAmong, MIN_PEERS } from './src/peers.js';
 import { openDb } from './src/db.js';
@@ -62,6 +63,7 @@ try {
 await initAuth(db);
 initPeers(db);
 initCache(db);
+initSectors(db);
 // 메일 설정이 있을 때만 이메일 인증·비밀번호 찾기를 켜요 (없으면 가입·로그인만)
 const MAIL_ON = mailConfigured();
 
@@ -382,7 +384,7 @@ const server = http.createServer(async (req, res) => {
         macro: sourceState(ECOS_KEY, 'macro'), macroError: sourceErrors.macro,
         news: Boolean(NAVER.id && NAVER.secret), newsError: newsError(), newsApi: newsApiName(), mail: MAIL_ON,
         ai: Boolean(OPENAI_KEY), aiModel: OPENAI_KEY ? OPENAI_MODEL : null,
-        db: db.kind, peers: await peerStatus(),
+        db: db.kind, peers: await peerStatus(), sectors: sectorStatus(),
       }, { 'Cache-Control': 'no-store' });
     }
 
@@ -411,6 +413,13 @@ const server = http.createServer(async (req, res) => {
         macro,
         sources: { price: sourceState(PRICE_KEY, 'price'), macro: sourceState(ECOS_KEY, 'macro') },
       });
+    }
+
+    // 업종별 상태: 업종 온도·흐름·등락과 순위 TOP 5 (자체 계산 지수, 투자 권유 아님)
+    if (url.pathname === '/api/sectors') {
+      if (!PRICE_KEY) return json(res, 503, { error: '업종별 상태는 시세 키(DATA_GO_KR_KEY)가 있어야 볼 수 있어요.' });
+      await ready;
+      return json(res, 200, { ...(await getSectors(PRICE_KEY)), status: sectorStatus() });
     }
 
     // 주가 흐름(기술적 분석): 과열·침체 지표, 이동평균, 그래프 (성향과 무관, 투자 권유 아님)
@@ -479,6 +488,7 @@ server.listen(PORT, async () => {
   const p = await peerStatus();
   console.log(p.metrics ? `업종 비교 데이터 ${p.metrics.toLocaleString()}건 있음, 오래된 것만 새로 받아요.`
     : '업종 비교 데이터를 처음 모으는 중이에요. 끝날 때까지는 기준표로 계산해요.');
-  syncPeers(DART_KEY).finally(() => picks.schedule());
-  setInterval(() => syncPeers(DART_KEY), 24 * 60 * 60 * 1000).unref();
+  // 업종별 상태는 업종 코드(업종 비교 수집 결과)가 있어야 해서 그 뒤에 모아요 (처음엔 약 80번 호출, 이후 하루 1번)
+  syncPeers(DART_KEY).finally(() => { picks.schedule(); syncSectors(PRICE_KEY); });
+  setInterval(() => syncPeers(DART_KEY).finally(() => syncSectors(PRICE_KEY)), 24 * 60 * 60 * 1000).unref();
 });

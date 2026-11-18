@@ -389,22 +389,26 @@
     </section>
 
     <!-- 주가 흐름 화면 (#trend): 메뉴에서 열면 위 화면 대신 보여요. 동작은 technical.js -->
-    <section id="trend" class="wrap trend view-trend" aria-labelledby="trendTitle">
+    <section id="trend" class="wrap trend view-trend" data-tab="stock" aria-labelledby="trendTitle">
       <div class="page-hero">
         <p class="eyebrow">주가 흐름</p>
         <h1 id="trendTitle">지금 주가, 과열일까 침체일까?</h1>
         <p class="hero-sub">최근 주가 움직임으로 계산한 지표를 쉽게 풀어드려요.</p>
-        <form id="trendForm" class="search" autocomplete="off">
+        <div class="trend-tabs" id="trendTabs" role="tablist">
+          <button type="button" role="tab" data-tab="stock" aria-selected="true">종목별</button>
+          <button type="button" role="tab" data-tab="sector" aria-selected="false">업종별</button>
+        </div>
+        <form id="trendForm" class="search trend-stock-only" autocomplete="off">
           <label for="trendQ" class="sr-only">종목명 또는 종목코드</label>
           <input id="trendQ" list="stockList" placeholder="궁금한 종목명 또는 종목코드" required />
           <button type="submit">주가 흐름 보기</button>
         </form>
       </div>
 
-      <p id="trendError" class="error" role="alert" hidden></p>
-      <div id="trendEmpty" class="empty">종목을 검색하면 최근 주가가 과열인지 침체인지, 어느 쪽으로 움직이는지 보여드려요.</div>
+      <p id="trendError" class="error trend-stock-only" role="alert" hidden></p>
+      <div id="trendEmpty" class="empty trend-stock-only">종목을 검색하면 최근 주가가 과열인지 침체인지, 어느 쪽으로 움직이는지 보여드려요.</div>
 
-      <div id="trendResult" class="trend-body" hidden>
+      <div id="trendResult" class="trend-body trend-stock-only" hidden>
         <article class="card trend-top">
           <div class="company-head">
             <div class="company-id">
@@ -476,6 +480,39 @@
         </div>
 
         <p id="trendFine" class="fine trend-fine"></p>
+      </div>
+
+      <!-- 업종별 상태 (sectors.js): 업종 지수는 시가총액 가중 자체 계산 -->
+      <div id="sectorView" class="trend-body trend-sector-only">
+        <p id="sectorStatus" class="feed-note" hidden></p>
+        <div id="sectorBody" class="trend-body" hidden>
+          <article class="card sector-market">
+            <div class="mini-head"><h4>시장 전체</h4><span id="sectorAsOf"></span></div>
+            <div id="sectorMarket" class="sector-market-row"></div>
+          </article>
+          <article class="card">
+            <div class="mini-head">
+              <h4>업종 순위 TOP 5</h4>
+              <div class="chips" id="sectorRankTabs">
+                <button type="button" data-rank="strong" aria-pressed="true">최근 강한 업종</button>
+                <button type="button" data-rank="hot" aria-pressed="false">과열된 업종</button>
+                <button type="button" data-rank="cold" aria-pressed="false">침체된 업종</button>
+              </div>
+            </div>
+            <p id="sectorRankNote" class="plan-note"></p>
+            <ol id="sectorTop" class="sector-top"></ol>
+          </article>
+          <details class="card sector-all">
+            <summary id="sectorAllTitle">전체 업종 보기</summary>
+            <div class="table-scroll">
+              <table class="trend-table">
+                <thead><tr><th>업종</th><th>종목 수</th><th>주가 온도</th><th>흐름</th><th>1주</th><th>1개월</th><th>오늘 오른 종목</th></tr></thead>
+                <tbody id="sectorAll"></tbody>
+              </table>
+            </div>
+          </details>
+          <p id="sectorFine" class="fine"></p>
+        </div>
       </div>
     </section>
   </main>
