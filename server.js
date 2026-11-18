@@ -436,7 +436,7 @@ const server = http.createServer(async (req, res) => {
         sectorSeriesFor(stock.code), stockDisclosures(DART_KEY, stock), stockNews(NAVER, stock), analystNews(NAVER, stock),
       ])).map(r => (r.status === 'fulfilled' ? r.value : null));
       return json(res, 200, {
-        stock: publicStock(stock), ...buildClues(rows, series, { disclosures: disclosures ?? [], news: news ?? [], analyst: analyst ?? [] }),
+        stock: publicStock(stock), ...buildClues(rows, series, { disclosures: disclosures ?? [], news: news ?? [], analyst: analyst ?? [] }, stock.name),
         newsEnabled: Boolean(NAVER.id && NAVER.secret), disclosuresEnabled: Boolean(DART_KEY),
       });
     }
