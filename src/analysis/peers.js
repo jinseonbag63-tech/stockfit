@@ -2,8 +2,8 @@
 // 한 종목의 지표가 같은 업종(KSIC 앞 2자리) 안에서 몇 등쯤인지(백분위) 계산
 // - 처음 한 번은 상장사 수만큼 기업개황을 불러서 10분 넘게 걸려요(서버는 그동안 기존 기준표로 동작)
 // - 업종 코드는 90일, 재무 지표는 7일마다 새로 받아요
-import { callDart, chooseStatement, mainAccounts, coreMetrics } from './dart.js';
-import { allCompanies, hasFullList } from './corpCodes.js';
+import { callDart, chooseStatement, mainAccounts, coreMetrics } from '../sources/dart.js';
+import { allCompanies, hasFullList } from '../sources/corpCodes.js';
 
 const INFO_MAX_AGE = 90 * 24 * 60 * 60 * 1000;
 const METRIC_MAX_AGE = 7 * 24 * 60 * 60 * 1000;

@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { FALLBACK_STOCKS, ALIASES } from './stocks.js';
+import { FALLBACK_STOCKS, ALIASES } from '../sample/stocks.js';
 
 const MAX_AGE = 24 * 60 * 60 * 1000;
 let companies = FALLBACK_STOCKS;

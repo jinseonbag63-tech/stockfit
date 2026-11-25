@@ -1,11 +1,11 @@
 // 회원가입·로그인·세션 관리 (users, sessions, watchlist, email_tokens 테이블)
 // - 비밀번호는 scrypt 해시로만 저장
 // - 세션 토큰은 브라우저 쿠키에만 있고, DB에는 토큰의 해시값만 저장
-// - DB는 src/db.js (Postgres 또는 SQLite), 모든 함수는 await
+// - DB는 src/core/db.js (Postgres 또는 SQLite), 모든 함수는 await
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
-import { isUniqueViolation } from './db.js';
-import { cleanAnswers } from '../public/survey.js';
+import { isUniqueViolation } from '../core/db.js';
+import { cleanAnswers } from '../../public/js/survey.js';
 
 const scrypt = promisify(crypto.scrypt);
 export const SESSION_COOKIE = 'sf_session';
@@ -43,7 +43,7 @@ async function checkPassword(password, stored) {
 // 없는 이메일로 로그인해도 같은 시간이 걸리게 해서, 가입 여부를 응답 속도로 알 수 없게 함
 const DUMMY_HASH = hashPassword('stockfit-dummy-password');
 
-// 투자성향 설문 답변 (public/survey.js 규칙으로 확인)
+// 투자성향 설문 답변 (public/js/survey.js 규칙으로 확인)
 export const cleanProfile = cleanAnswers;
 export function cleanWatchlist(list) {
   if (!Array.isArray(list)) return [];

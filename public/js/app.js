@@ -1,12 +1,12 @@
 // 화면 동작: 설문 → 분석 요청 → 결과 표시, 관심종목 관리
 import { SURVEY, riskFromAnswers } from './survey.js';
 import { initViews, goTo } from './views.js';
-import { initTrend, openTrend } from './technical.js';
-import { initCompare, openCompare, refreshCompare, renderWatchChips as compareWatchChips } from './compare.js';
-import { initWatch, refreshWatch, watchStocks } from './watch.js';
-import { initPlanner, refreshPlanner, renderWatchChips as plannerWatchChips } from './planner.js';
-import { initSectors } from './sectors.js';
-import { initClues } from './clues.js';
+import { initTrend, openTrend } from './screens/technical.js';
+import { initCompare, openCompare, refreshCompare, renderWatchChips as compareWatchChips } from './screens/compare.js';
+import { initWatch, refreshWatch, watchStocks } from './screens/watch.js';
+import { initPlanner, refreshPlanner, renderWatchChips as plannerWatchChips } from './screens/planner.js';
+import { initSectors } from './screens/sectors.js';
+import { initClues } from './screens/clues.js';
 
 const $ = id => document.getElementById(id);
 

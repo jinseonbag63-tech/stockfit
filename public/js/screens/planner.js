@@ -1,7 +1,7 @@
 // 투자 플래너 화면 (#planner): 종목·금액·나누는 방식 입력 → 예시 구성, 위험 점검, 과거 시뮬레이션 그래프
-// 계산은 서버(src/planner.js)가 하고, 여기서는 입력과 그리기만 해요. 입력값은 이 기기에만 저장해요.
+// 계산은 서버(src/market/planner.js)가 하고, 여기서는 입력과 그리기만 해요. 입력값은 이 기기에만 저장해요.
 // app.js가 initPlanner({ $, esc, show, api, store, getProfile, getWatchStocks })로 필요한 도구를 넘겨줘요.
-import { onShowView } from './views.js';
+import { onShowView } from '../views.js';
 
 let $, esc, show, api, store, getProfile, getWatchStocks;
 let state = { amount: 5_000_000, method: 'equal', period: '1y', buy: 'lump', stocks: [] }; // stocks: [{ code, name, custom }]

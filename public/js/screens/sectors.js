@@ -1,5 +1,5 @@
 // 주가 흐름 화면의 "업종별" 탭: 시장 전체, 업종 순위 TOP 5(최근 강한 / 과열 / 침체), 전체 업종 표
-// 계산은 서버(src/sectors.js)가 하고, 여기서는 그리기만 해요. 처음 탭을 열 때 불러와요.
+// 계산은 서버(src/market/sectors.js)가 하고, 여기서는 그리기만 해요. 처음 탭을 열 때 불러와요.
 // app.js가 initSectors({ $, esc, api, openTrend })로 필요한 도구를 넘겨줘요.
 import { onTrendTab } from './technical.js';
 

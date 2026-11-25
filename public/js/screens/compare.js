@@ -1,7 +1,7 @@
 // 종목 비교 화면 (#compare): 두 종목을 내 성향 기준으로 여섯 가지 기준별로 나란히 비교
 // 서버의 종목 분석 API(/api/analyze)를 종목마다 한 번씩 불러서 그리기만 해요 (점수는 종목 분석 화면과 같음).
 // app.js가 initCompare({ $, esc, show, api, getProfile, getWatchStocks, onAnalyze })로 필요한 도구를 넘겨줘요.
-import { onShowView, goTo } from './views.js';
+import { onShowView, goTo } from '../views.js';
 
 let $, esc, show, api, getProfile, getWatchStocks, onAnalyze;
 let pair = null; // [A 분석 결과, B 분석 결과]

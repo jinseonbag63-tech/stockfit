@@ -6,7 +6,7 @@
 //    개별 주식은 펀드 기준 위험 등급으로 거의 다 1~2등급이라, 점수에서 깎으면 안정형에게 모든 종목이 낮아져 비교가 안 돼요.
 //    대신 안정형·안정추구형에게는 "주식 자체가 원금 손실 위험이 있는 상품"이라는 안내를 항상 보여줘요.
 // 같은 입력이면 언제나 같은 점수가 나와요.
-import { RISK_LEVELS, riskFromAnswers } from '../public/survey.js';
+import { RISK_LEVELS, riskFromAnswers } from '../../public/js/survey.js';
 
 export { RISK_LEVELS };
 
@@ -73,7 +73,7 @@ const STOCK_NOTICE = [
   '주식은 원금 손실이 생길 수 있는 상품이에요. 아래 점수는 주식들 사이에서 어떤 종목이 내 성향에 더 가까운지 비교한 거예요.',
 ];
 
-// 설문 답변: public/survey.js의 q1~q7 (q1~q3만 있으면 예전 간이 진단)
+// 설문 답변: public/js/survey.js의 q1~q7 (q1~q3만 있으면 예전 간이 진단)
 // 성향은 7문항 점수로, 기준별 비중은 선호 기업(q1)·투자 기간(q2)·손실 감내도(q3)로 정해요
 export function buildProfile(answers = {}, macro = null) {
   const a = { q1: 'steady', q2: 'long', q3: 'calm' }; // 설문 전 기본값

@@ -52,39 +52,65 @@ Render 무료 플랜은 서버 파일이 재시작·재배포·잠들 때마다 
 
 ## 폴더 구조
 
+파일은 역할별 폴더로 묶여 있어요. `public/`은 브라우저에서 실행되는 화면, `src/`는 서버에서 실행되는 데이터 수집·계산·회원 기능이에요.
+
+```
+server.js            서버 시작점: 요청을 주소별로 나눠 src에 맡기고, 화면 파일 제공, 자동 수집 시작
+src/
+├─ sources/          외부 데이터 가져오기 (DART, 공공데이터포털, 한국은행, 네이버)
+├─ analysis/         적합도 계산과 설명
+├─ market/           주가 흐름·업종별 상태·상승하락 단서·투자 플래너 계산
+├─ account/          회원, AI 도우미, 메일
+├─ core/             DB 연결, 캐시
+└─ sample/           키가 없을 때 쓰는 예시 종목·데이터
+public/
+├─ index.html · style.css
+└─ js/
+   ├─ app.js · views.js · survey.js
+   └─ screens/       화면별 파일 (관심종목, 종목 비교, 주가 흐름, 업종별, 단서, 플래너)
+```
+
 | 파일 | 역할 |
 |---|---|
-| `server.js` | 서버. 화면 파일 제공 + `/api/analyze` 분석 API |
-| `src/corpCodes.js` | DART 상장사 고유번호 목록 다운로드·저장·검색 |
-| `src/stocks.js` | 키가 없을 때 쓰는 기본 3종목, 첫 화면 빠른 선택 종목, 검색 별명 |
-| `src/industry.js` | 업종 코드(KSIC) → 업종 이름, 시장 구분 |
-| `src/dart.js` | DART API 호출, 부채비율·영업이익률·ROE·매출성장률·배당 계산 |
-| `src/scoring.js` | 설문 → 투자성향·가중치, 지표 → 기준 점수 → 적합도 |
-| `src/explain.js` | 지표를 쉬운 문장으로 설명 (용어 뜻 + 이 회사 수치 해석 + 내 기준에서의 의미) |
-| `src/sampleData.js` | 키가 없을 때 쓰는 예시 데이터 |
-| `src/db.js` | 데이터베이스 연결: `DATABASE_URL`이 있으면 Postgres, 없으면 SQLite. 테이블 정의 |
-| `src/auth.js` | 회원가입·로그인·세션, 이메일 인증, 비밀번호 재설정, 회원별 투자성향·관심종목 저장 |
-| `src/mail.js` | 메일 발송(SMTP), 인증·재설정 메일 문구 |
-| `src/feed.js` | 종목 소식: DART 공시 목록(쉬운 설명·중요도 표시) + 네이버 뉴스 |
-| `src/price.js` | 주가 시세(공공데이터포털): 3년 일별 시세, 변동성, 최대 하락폭, 위험 등급, 시가총액 |
-| `src/clues.js` | 상승·하락 단서: 시장·업종 대비 비교, 크게 움직인 날, 공시·뉴스, 증권가 시각 (계산만) |
-| `src/sectors.js` | 업종별 상태: 날짜별 전체 시세로 업종·시장 지수 자체 계산(DB `sector_daily`), 온도·흐름·순위 |
-| `src/planner.js` | 투자 플래너: 예시 구성(금액·주수), 위험 점검, 과거 시뮬레이션 (계산만) |
-| `src/technical.js` | 주가 흐름: 기술적 지표 12개, 이동평균, 주가 온도·흐름 판정, 그래프 데이터 (계산만) |
-| `src/macro.js` | 금리(한국은행 ECOS): 기준금리, 국고채 3년 |
-| `src/picks.js` | 내 성향에 맞는 종목: 후보 데이터 준비, 성향별 순위 |
-| `src/cache.js` | 외부 API 결과를 메모리와 DB에 저장 |
-| `src/peers.js` | 업종 비교: 상장사 전체 업종·재무 지표 수집, 업종 안 순위 계산 |
-| `src/chat.js` | AI 도우미(OpenAI): 지시문, 분석 데이터 요약, 대화 정리, 횟수 제한 |
-| `public/` | 화면 (HTML, CSS, JS) |
-| `public/survey.js` | 투자성향 설문 7문항과 성향 판정 규칙 (서버와 화면이 같이 씀) |
-| `public/views.js` | 화면 전환: 종목 분석(`#analysis`)·관심종목(`#watch`)·종목 비교(`#compare`)·주가 흐름(`#trend`) |
-| `public/compare.js` | 종목 비교 화면 그리기 |
-| `public/clues.js` | 주가 흐름 화면의 "왜 움직였을까?" 카드 |
-| `public/sectors.js` | 주가 흐름 화면의 "업종별" 탭 |
-| `public/planner.js` | 투자 플래너 화면: 입력, 결과, 시뮬레이션 그래프 |
-| `public/watch.js` | 관심종목 화면: 표, 삭제·정렬·순서, 구성 진단, 비교할 종목 고르기 |
-| `public/technical.js` | 주가 흐름 화면 그리기 |
+| `server.js` | 서버. 화면 파일 제공 + API, 서버 시작 시와 하루 1번 데이터 수집 |
+| **src/sources/** | **외부 데이터** |
+| `src/sources/dart.js` | DART API 호출, 부채비율·영업이익률·ROE·매출성장률·배당 계산 |
+| `src/sources/price.js` | 주가 시세(공공데이터포털): 3년 일별 시세, 변동성, 최대 하락폭, 위험 등급, 시가총액 |
+| `src/sources/macro.js` | 금리(한국은행 ECOS): 기준금리, 국고채 3년 |
+| `src/sources/feed.js` | 종목 소식: DART 공시 목록(쉬운 설명·중요도 표시) + 네이버 뉴스 |
+| `src/sources/corpCodes.js` | DART 상장사 고유번호 목록 다운로드·저장·검색 |
+| **src/analysis/** | **적합도** |
+| `src/analysis/scoring.js` | 설문 → 투자성향·가중치, 지표 → 기준 점수 → 적합도 |
+| `src/analysis/peers.js` | 업종 비교: 상장사 전체 업종·재무 지표 수집, 업종 안 순위 계산 |
+| `src/analysis/explain.js` | 지표를 쉬운 문장으로 설명 (용어 뜻 + 이 회사 수치 해석 + 내 기준에서의 의미) |
+| `src/analysis/picks.js` | 내 성향에 맞는 종목: 후보 데이터 준비, 성향별 순위 |
+| `src/analysis/industry.js` | 업종 코드(KSIC) → 업종 이름, 시장 구분 |
+| **src/market/** | **주가 흐름 · 플래너** |
+| `src/market/technical.js` | 주가 흐름: 기술적 지표 12개, 이동평균, 주가 온도·흐름 판정, 그래프 데이터 (계산만) |
+| `src/market/sectors.js` | 업종별 상태: 날짜별 전체 시세로 업종·시장 지수 자체 계산(DB `sector_daily`), 온도·흐름·순위 |
+| `src/market/clues.js` | 상승·하락 단서: 시장·업종 대비 비교, 크게 움직인 날, 공시·뉴스, 증권가 시각 (계산만) |
+| `src/market/planner.js` | 투자 플래너: 예시 구성(금액·주수), 위험 점검, 과거 시뮬레이션 (계산만) |
+| **src/account/** | **회원 · AI** |
+| `src/account/auth.js` | 회원가입·로그인·세션, 이메일 인증, 비밀번호 재설정, 회원별 투자성향·관심종목 저장 |
+| `src/account/chat.js` | AI 도우미(OpenAI): 지시문, 분석 데이터 요약, 대화 정리, 횟수 제한 |
+| `src/account/mail.js` | 메일 발송(SMTP), 인증·재설정 메일 문구 |
+| **src/core/** | **공통** |
+| `src/core/db.js` | 데이터베이스 연결: `DATABASE_URL`이 있으면 Postgres, 없으면 SQLite. 테이블 정의 |
+| `src/core/cache.js` | 외부 API 결과를 메모리와 DB에 저장 |
+| **src/sample/** | **예시 데이터** |
+| `src/sample/stocks.js` | 키가 없을 때 쓰는 기본 3종목, 첫 화면 빠른 선택 종목, 검색 별명 |
+| `src/sample/sampleData.js` | 키가 없을 때 쓰는 예시 데이터 |
+| **public/** | **화면 (브라우저에서 실행)** |
+| `public/index.html` · `style.css` | 페이지 뼈대(모든 화면), 디자인·모바일·모드별 보이기 |
+| `public/js/app.js` | 중심 파일: 종목 분석 화면, 설문, 로그인, AI 도우미 대화, 모드 전환, 화면 파일 연결 |
+| `public/js/views.js` | 화면 전환: 종목 분석(`#analysis`)·관심종목(`#watch`)·종목 비교(`#compare`)·주가 흐름(`#trend`)·투자 플래너(`#planner`) |
+| `public/js/survey.js` | 투자성향 설문 7문항과 성향 판정 규칙 (서버와 화면이 같이 씀) |
+| `public/js/screens/watch.js` | 관심종목 화면: 표, 삭제·정렬·순서, 구성 진단, 비교할 종목 고르기 |
+| `public/js/screens/compare.js` | 종목 비교 화면 그리기 |
+| `public/js/screens/technical.js` | 주가 흐름 화면 그리기 |
+| `public/js/screens/sectors.js` | 주가 흐름 화면의 "업종별" 탭 |
+| `public/js/screens/clues.js` | 주가 흐름 화면의 "왜 움직였을까?" 카드 |
+| `public/js/screens/planner.js` | 투자 플래너 화면: 입력, 결과, 시뮬레이션 그래프 |
 
 ## 내 성향에 맞는 종목
 
@@ -218,11 +244,11 @@ Render 무료 플랜은 서버 파일이 재시작·재배포·잠들 때마다 
 
 수익률 예측이 아니라 **재무 건전성과 위험 수준이 내 성향과 맞는지**를 봐요.
 
-1. 설문 7문항(`public/survey.js`) → 5단계 투자성향. 투자자정보확인서 항목(나이, 투자 기간, 투자 경험, 금융 지식, 자산 중 투자 비중, 손실 감내도)과 선호 기업 유형의 점수 합계를 5구간으로 나눠요.
+1. 설문 7문항(`public/js/survey.js`) → 5단계 투자성향. 투자자정보확인서 항목(나이, 투자 기간, 투자 경험, 금융 지식, 자산 중 투자 비중, 손실 감내도)과 선호 기업 유형의 점수 합계를 5구간으로 나눠요.
    - "원금 손실은 싫어요"를 고르면 다른 답과 상관없이 안정형이에요.
    - 예전 3문항 답변만 있으면 예전 방식으로 계산하고 "간이"로 표시해요. 설문을 다시 하면 7문항으로 바뀌어요.
 2. 선호 기업·투자 기간·손실 감내도에 따라 6개 기준의 비중을 정해요. 국고채 3년 금리가 3.5% 이상이면 안정성 비중을 20% 높여요.
-3. 지표마다 0~100점을 매겨요. 같은 업종(KSIC 앞 2자리) 회사가 8곳 이상 모였으면 **업종 안 순위**, 아니면 고정 기준표(`src/scoring.js`의 `METRICS`)를 써요.
+3. 지표마다 0~100점을 매겨요. 같은 업종(KSIC 앞 2자리) 회사가 8곳 이상 모였으면 **업종 안 순위**, 아니면 고정 기준표(`src/analysis/scoring.js`의 `METRICS`)를 써요.
 4. 기준 점수(지표 평균) × 비중을 모두 더한 값이 적합도예요. 데이터가 없는 기준은 빼고 비중을 다시 맞춰요.
 5. 최근 3년 주가로 위험 등급(97.5% VaR, 1~6등급)을 매겨서 **안내로만** 보여줘요. 펀드 기준 구간이라 개별 주식은 거의 다 1~2등급이어서, 점수에서 깎으면 안정형에게 모든 종목이 낮아져 비교가 안 되기 때문이에요. 주가 변동은 "주가 안정성" 기준으로 점수에 반영돼요.
 6. 안정형·안정추구형에게는 "주식은 원금 손실이 생길 수 있는 상품이고, 점수는 주식들 사이의 비교"라는 안내를 적합도 패널 맨 위에 항상 보여줘요.

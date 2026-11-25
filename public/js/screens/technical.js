@@ -1,7 +1,7 @@
 // 주가 흐름 화면 (#trend): 주가 온도(과열·침체), 주가 흐름(상승·하락), 그래프, 지표 표
-// 계산은 서버(src/technical.js)가 하고, 여기서는 그리기만 해요.
+// 계산은 서버(src/market/technical.js)가 하고, 여기서는 그리기만 해요.
 // app.js가 initTrend({ $, esc, show, api, onAnalyze })로 필요한 도구를 넘겨줘요.
-import { onShowView, goTo } from './views.js';
+import { onShowView, goTo } from '../views.js';
 import { loadClues } from './clues.js';
 
 let $, esc, show, api, onAnalyze;

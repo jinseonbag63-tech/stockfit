@@ -1,7 +1,7 @@
 // 관심종목 화면 (#watch): 표(적합도·기준 6개·주가 온도·전일 대비), 삭제·정렬·순서 바꾸기, 구성 진단, 두 종목 비교 선택
 // 관심종목 목록 자체(이 기기·계정 저장)는 app.js가 관리하고, 여기서는 그리기와 화면 안 동작만 해요.
 // app.js가 initWatch({ $, esc, api, store, analyze, getProfile, getWatchlist, setWatchlist, onAnalyze, onCompare })로 넘겨줘요.
-import { onShowView, currentView } from './views.js';
+import { onShowView, currentView } from '../views.js';
 
 let $, esc, api, store, analyze, getProfile, getWatchlist, setWatchlist, onAnalyze, onCompare;
 let results = [];       // [{ code, d }] 관심종목 순서대로, d는 종목 분석 결과 (실패하면 null)

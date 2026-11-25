@@ -1,10 +1,10 @@
 // 업종별 상태: 하루치 전체 종목 시세로 업종(KSIC 앞 2자리)·시장 전체 지수를 직접 계산해 DB(sector_daily)에 쌓고,
 // 그 지수로 업종 온도(과열~침체)·흐름·등락과 순위(TOP 5)를 계산해요.
 // 공식 코스피·업종 지수가 아니라, 상장사(코스피·코스닥)를 시가총액 가중으로 묶은 자체 계산이에요.
-import { getDailyAll, getMarketCaps } from './price.js';
+import { getDailyAll, getMarketCaps } from '../sources/price.js';
 import { analyzeIndex } from './technical.js';
-import { industryName } from './industry.js';
-import { getByCode } from './corpCodes.js';
+import { industryName } from '../analysis/industry.js';
+import { getByCode } from '../sources/corpCodes.js';
 
 const TARGET_DAYS = 80;   // 60일 이동평균 + 여유
 const SCAN_LIMIT = 200;   // 거꾸로 훑을 최대 달력 일수

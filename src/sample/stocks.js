@@ -1,5 +1,5 @@
 // 키가 없을 때(예시 데이터 모드) 쓰는 기본 종목 목록
-// 키가 있으면 src/corpCodes.js가 DART에서 상장사 전체 목록을 받아와요.
+// 키가 있으면 src/sources/corpCodes.js가 DART에서 상장사 전체 목록을 받아와요.
 export const FALLBACK_STOCKS = [
   { code: '005930', corpCode: '00126380', name: '삼성전자', engName: 'SAMSUNG ELECTRONICS' },
   { code: '000660', corpCode: '00164779', name: 'SK하이닉스', engName: 'SK hynix' },
